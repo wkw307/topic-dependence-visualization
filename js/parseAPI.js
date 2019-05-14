@@ -42,7 +42,7 @@ function parseAPI(data, domainId){
   }
 
   paths = [];
-  findPath([], domainId, hashTable);
+  findPath(paths, domainId, hashTable);
   p = paths.map(el => el.join(','));
   let forwardPathCount = 0;
   for(let topicId in hashTable){
