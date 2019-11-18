@@ -1,4 +1,7 @@
 import { cloneDeep } from 'lodash';
+import * as R from 'r-script';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface RelationRes {
     startTopicId: number;
@@ -92,4 +95,33 @@ function preProcess(topics, relations) {
     }
     resultRelations[-1] = entranceTopicIds;
     return resultRelations;
+}
+
+function calCommunity(rScriptPath: string,
+                      topics: { [p: number]: string },
+                      relations: { [p: number]: number[] },
+                      output: string,
+                      ) {
+    if (!fs.existsSync('./tmp')) {
+        fs.mkdirSync('./tmp')
+    }
+    let topicStr = '';
+    for (let key in topics) {
+        topicStr += key.toString() + ' ' + topics[key] + '\n';
+    }
+    fs.writeFileSync('./tmp/topic.txt', topicStr, {encoding: 'utf8'});
+    let relationStr = '';
+    for (let key in relations) {
+        for (let endTopic of relations[key]) {
+            relationStr += key.toString() + ' ' + endTopic.toString() + '\n';
+        }
+    }
+    fs.writeFileSync('./tmp/relation.txt', relationStr, {encoding: 'utf8'});
+    const out = R(rScriptPath)
+        .data(
+            path.join(__dirname, './tmp/topic.txt'),
+            path.join(__dirname, './tmp/relation.txt'),
+            output
+        )
+        .callSync();
 }
