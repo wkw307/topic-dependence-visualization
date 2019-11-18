@@ -24,7 +24,8 @@
   "homepage": "https://github.com/wkw307/topic-dependence-visualization#readme",
   "dependencies": {
     "d3": "^5.9.2",
-    "lodash": "^4.17.15"
+    "lodash": "^4.17.15",
+    "r-script": "^0.0.4"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.147",
