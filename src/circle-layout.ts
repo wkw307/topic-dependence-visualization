@@ -177,7 +177,7 @@ export function calcCircleLayout(
     for (let i = 0; i < count; i++) {
         const tmp = {
             r,
-            topicId: sequence[i],
+            id: sequence[i],
             cx: center.x + (radius - r) * Math.sin(angle * i),
             cy: center.y - (radius - r) * Math.cos(angle * i),
         };

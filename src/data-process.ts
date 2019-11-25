@@ -3,7 +3,7 @@ import * as R from 'r-script';
 import * as fs from 'fs';
 import * as path from 'path';
 
-interface RelationRes {
+export interface RelationRes {
     startTopicId: number;
     endTopicId: number;
     startTopicName: string;
@@ -15,7 +15,7 @@ interface RelationRes {
  * 解析api数据
  * @param data
  */
-function parseAPI(data: RelationRes[]): { topics: { [p: number]: string }, relations: { [p: number]: number[] }} {
+export function parseAPI(data: RelationRes[]): { topics: { [p: number]: string }, relations: { [p: number]: number[] }} {
     const topics = {};
     const relations = {};
     for (let relation of data) {
@@ -33,7 +33,7 @@ function parseAPI(data: RelationRes[]): { topics: { [p: number]: string }, relat
 /**
  * 删除前向边，入度为零的点均挂载到虚拟节点上
  */
-function preProcess(topics, relations) {
+export function preProcess(topics, relations) {
     const resultPaths = [];
     const resultRelations = {};
     // 找出所有路径
@@ -104,7 +104,7 @@ function preProcess(topics, relations) {
  * @param relations
  * @param output
  */
-function calCommunity(rScriptPath: string,
+export function calCommunity(rScriptPath: string,
                       topics: { [p: number]: string },
                       relations: { [p: number]: number[] },
                       output: string,
