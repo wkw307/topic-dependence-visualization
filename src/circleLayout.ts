@@ -131,6 +131,18 @@ function calcCrossing(sequence: number[], relations: {[p: string]: any}): {[p:st
 }
 
 /**
+ * 计算两个圆圆心连线在两个圆上的交点
+ * return { source: [x,y], target: [x,y] }
+ */
+function calcLinkSourceTargetBetweenCircles(cx1, cy1, r1, cx2, cy2, r2){
+    let x1 = cx1 + r1 * (cx2 - cx1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
+    let y1 = cy1 + r1 * (cy2 - cy1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
+    let x2 = cx2 - r2 * (cx2 - cx1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
+    let y2 = cy2 - r2 * (cy2 - cy1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
+    return [{'x': x1, 'y': y1}, {'x': x2, 'y': y2}];
+}
+
+/**
  * 判断给定值是否在某个范围内
  * @param start 
  * @param end 
@@ -148,20 +160,7 @@ export function calcCircleLayout(
     center: {x: number; y: number;},
     radius: number,
     relations: {[p: string]: any},
-    ): void {
-    const nodes = [];
-    for (let start in relations) {
-        if (relations[start]) {
-            for (let end of relations[start]) {
-                if (nodes.indexOf(end) === -1) {
-                    nodes.push(end);
-                }
-                if (!relations.hasOwnProperty(end)) {
-                    relations[end] = undefined;
-                }
-            }
-        }
-    }
+    ) {
     const {filteredRealtions, leafRelations} = preprocess(relations);
     const sequence = reduceCrossing(filteredRealtions);
     for (let start in leafRelations) {
@@ -169,5 +168,42 @@ export function calcCircleLayout(
             sequence.splice(sequence.indexOf(start), 0, end)
         }
     }
-    
+    const count = sequence.length;
+    const r = 0.7 * radius * Math.sin(Math.PI / count) / (1 + Math.sin(Math.PI / count));
+    const angle = Math.PI * 2 / count;
+    const nodes = [];
+    const edges = [];
+    const node2position = {};
+    for (let i = 0; i < count; i++) {
+        const tmp = {
+            r,
+            topicId: sequence[i],
+            cx: center.x + (radius - r) * Math.sin(angle * i),
+            cy: center.y - (radius - r) * Math.cos(angle * i),
+        };
+        node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+        nodes.push(tmp);
+    }
+    for (let start in relations) {
+        if (relations[start]) {
+            for (let end of relations[start]) {
+                const tmp = {
+                    start: parseInt(start),
+                    end: parseInt(end),
+                    path: calcLinkSourceTargetBetweenCircles(
+                        node2position[start][0],
+                        node2position[start][1],
+                        node2position[start][2],
+                        node2position[end][0],
+                        node2position[end][1],
+                        node2position[end][2]),
+                };
+                edges.push(tmp);
+            }
+        }
+    }
+    return {
+        nodes,
+        edges,
+    }
 }
