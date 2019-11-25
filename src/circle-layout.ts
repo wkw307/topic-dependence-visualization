@@ -24,7 +24,7 @@ function preprocess(relations: {[p:string]: any}): {filteredRealtions: {[p:strin
     const filteredRealtions = {};
     const leafRelations = {};
     for (let start in relations) {
-        filteredRealtions[start] = undefined;
+        filteredRealtions[start] = [];
         if (relations[start]) {
             for (let end of relations[start]) {
                 if (leafNodes.indexOf(end) === -1) {
@@ -149,11 +149,7 @@ function calcLinkSourceTargetBetweenCircles(cx1, cy1, r1, cx2, cy2, r2){
  * @param target 
  */
 function whetherInRange(start, end, target): boolean {
-    if (target < end && target > start) {
-        return true;
-    } else {
-        return false;
-    }
+    return target < end && target > start;
 }
 
 export function calcCircleLayout(

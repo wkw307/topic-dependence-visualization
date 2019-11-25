@@ -1,13 +1,14 @@
 import * as d3 from 'd3';
 import * as path from 'path';
+import axios from 'axios';
 
-import {calCommunity, parseAPI, preProcess, RelationRes} from "./data-process";
+import {RelationRes} from "./data-process";
 import {calcCircleLayout} from "./circle-layout";
 
-export function drawMap(
+export async function drawMap(
     svg: HTMLElement,
     data: RelationRes[],
-): void {
+) {
     const canvas = d3.select(svg);
     const defs = canvas.append("defs");
     const arrowMarker = defs.append("marker")
@@ -30,17 +31,35 @@ export function drawMap(
         .y(function(d){return d.y})
         .curve(d3.curveCatmullRom.alpha(0.5));
 
-    const {topics, relations} = parseAPI(data);
-    const resultRelations = preProcess(topics, relations);
-    const {graph, topicId2Community, communityRelation, relationCrossCommunity} = calCommunity(
-        path.join(__dirname, '../rscript/communityDiscovery.r'),
+    const parseResult = await axios.post('http://localhost:3000/parseAPI', data, {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+    const {topics, relations} = parseResult.data;
+    const resultRelations = (await axios.post('http://localhost:3000/preProcess', {
+        topics, relations
+    }, {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })).data;
+    if (resultRelations.hasOwnProperty(-1)) {
+        topics[-1] = '（开始）';
+    }
+    const {graph, topicId2Community, communityRelation, relationCrossCommunity} = (await axios.post('http://localhost:3000/calCommunity', {
+        rpath: '../rscript/communityDiscovery.r',
         topics,
-        resultRelations,
-        path.join(__dirname, '../tmp/'),
-        );
-    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight : svg.clientWidth;
+        relations: resultRelations,
+        output: '../tmp/',
+    }, {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })).data;
+    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 : svg.clientWidth / 2;
     const {nodes, edges} = calcCircleLayout(
-        {x: radius / 2, y: radius / 2},
+        {x: radius, y: radius},
         radius,
         communityRelation);
     canvas.append('g')

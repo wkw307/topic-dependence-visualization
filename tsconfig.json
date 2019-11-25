@@ -3,7 +3,7 @@
     "removeComments": true,
     "module": "commonjs",
     "target": "es5",
-    "types": ["lodash", "d3", "jest", "node"],
+    "types": ["lodash", "d3", "jest", "node", "express"],
     "sourceMap": true,
     "outDir": "dst",
     "lib": [
@@ -18,5 +18,5 @@
   ],
   "exclude": [
     "node_modules"
-  ],
+  ]
 }

@@ -21,7 +21,7 @@ export function parseAPI(data: RelationRes[]): { topics: { [p: number]: string }
     for (let relation of data) {
         topics[relation.startTopicId] = relation.startTopicName;
         topics[relation.endTopicId] = relation.endTopicName;
-        if (relations[relation.startTopicId] === undefined) {
+        if (!relations[relation.startTopicId]) {
             relations[relation.startTopicId] = [relation.endTopicId];
         } else {
             relations[relation.startTopicId].push(relation.endTopicId);
@@ -47,7 +47,7 @@ export function preProcess(topics, relations) {
     while (paths.length > 0) {
         const currPath = paths.shift();
         const currTopic = currPath[currPath.length - 1];
-        if (relations[currTopic] === undefined) {
+        if (!relations[currTopic]) {
             resultPaths.push(currPath);
         } else {
             for (let key of relations[currTopic]) {
@@ -89,11 +89,13 @@ export function preProcess(topics, relations) {
                 }
             }
             if (flag) {
-                entranceTopicIds.push(topicId);
+                entranceTopicIds.push(parseInt(topicId));
             }
         }
     }
-    resultRelations[-1] = entranceTopicIds;
+    if (entranceTopicIds.length) {
+        resultRelations[-1] = entranceTopicIds;
+    }
     return resultRelations;
 }
 
@@ -109,21 +111,21 @@ export function calCommunity(rScriptPath: string,
                       relations: { [p: number]: number[] },
                       output: string,
                       ) {
-    if (!fs.existsSync('./tmp')) {
-        fs.mkdirSync('./tmp')
+    if (!fs.existsSync(path.join(__dirname, './tmp'))) {
+        fs.mkdirSync(path.join(__dirname, './tmp'))
     }
     let topicStr = '';
     for (let key in topics) {
         topicStr += key.toString() + ' ' + topics[key] + '\n';
     }
-    fs.writeFileSync('./tmp/topic.txt', topicStr, {encoding: 'utf8'});
+    fs.writeFileSync(path.join(__dirname, './tmp/topic.txt'), topicStr, {encoding: 'utf8'});
     let relationStr = '';
     for (let key in relations) {
         for (let endTopic of relations[key]) {
             relationStr += key.toString() + ' ' + endTopic.toString() + '\n';
         }
     }
-    fs.writeFileSync('./tmp/relation.txt', relationStr, {encoding: 'utf8'});
+    fs.writeFileSync(path.join(__dirname, './tmp/relation.txt'), relationStr, {encoding: 'utf8'});
     const out = R(rScriptPath)
         .data(
             path.join(__dirname, './tmp/topic.txt'),
@@ -135,16 +137,16 @@ export function calCommunity(rScriptPath: string,
     const topicId2Community = {};
     const relationCrossCommunity = [];
     const communityRelation = {};
-    const community = fs.readFileSync(path.join(__dirname, output, out.split(' ')[0] + '.txt'), { encoding: 'utf8'}).split('\n');
+    const community = fs.readFileSync(path.join(output, out.split(' ')[0] + '.txt'), { encoding: 'utf8'}).split('\n');
     for (let i = 1; i < community.length - 1; i++) {
         const line = community[i];
         const topicId = parseInt(line.split(' ')[1].replace(/"/g, ''));
         const communityId = parseInt(line.split(' ')[2].replace(/"/g, ''));
         if (graph.hasOwnProperty(communityId)) {
-            graph[communityId][topicId] = undefined;
+            graph[communityId][topicId] = [];
         } else {
             graph[communityId] = {};
-            graph[communityId][topicId] = undefined;
+            graph[communityId][topicId] = [];
         }
         topicId2Community[topicId] = communityId;
     }
@@ -168,6 +170,14 @@ export function calCommunity(rScriptPath: string,
                     }
                 }
             }
+        }
+    }
+    for (let com in graph) {
+        if (communityRelation[com]) {
+            // @ts-ignore
+            // communityRelation[com] = [...new Set(communityRelation[com])];
+        } else {
+            communityRelation[com] = [];
         }
     }
     return {
