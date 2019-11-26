@@ -2,10 +2,10 @@
  * 摘除图中的叶子结点
  * @param relations 
  */
-function preprocess(relations: {[p:string]: any}): {filteredRealtions: {[p:string]:any}; leafRelations: {[p:string]:any}} {
+function preprocess(relations: {[p:string]: any}): {filteredRelations: {[p:string]:any}; leafRelations: {[p:string]:any}} {
     const nodeFreq = {};
     for (let start in relations) {
-        if (relations[start]) {
+        if (relations[start].length !== 0) {
             for (let end of relations[start]) {
                 if (nodeFreq[end]) {
                     nodeFreq[end]++;
@@ -17,21 +17,24 @@ function preprocess(relations: {[p:string]: any}): {filteredRealtions: {[p:strin
     }
     const leafNodes = [];
     for (let node in nodeFreq) {
-        if (nodeFreq[node] === 1) {
+        if (nodeFreq[node] === 1 && relations[node].length === 0) {
             leafNodes.push(parseInt(node))
         }
     }
-    const filteredRealtions = {};
+    const filteredRelations = {};
     const leafRelations = {};
     for (let start in relations) {
-        filteredRealtions[start] = [];
-        if (relations[start]) {
+        if (relations[start].length !== 0) {
+            filteredRelations[start] = [];
             for (let end of relations[start]) {
                 if (leafNodes.indexOf(end) === -1) {
-                    if (filteredRealtions[start]) {
-                        filteredRealtions[start].push(end);
+                    if (filteredRelations[start]) {
+                        filteredRelations[start].push(end);
                     } else {
-                        filteredRealtions[start] = [end];
+                        filteredRelations[start] = [end];
+                    }
+                    if (!filteredRelations.hasOwnProperty(end)) {
+                        filteredRelations[end] = [];
                     }
                 } else {
                     if (leafRelations[start]) {
@@ -44,7 +47,7 @@ function preprocess(relations: {[p:string]: any}): {filteredRealtions: {[p:strin
         }
     }
     return {
-        filteredRealtions,
+        filteredRelations,
         leafRelations,
     }
 }
@@ -57,7 +60,7 @@ function reduceCrossing(relations: {[p:string]: any}) {
     const sequence = Array.prototype.concat([], Object.keys(relations).map(x => parseInt(x)));
     const degree = {};
     for (let start in relations) {
-        if (relations[start]) {
+        if (relations[start].length !== 0) {
             for (let end of relations[start]) {
                 if (degree[start]) {
                     degree[start]++;
@@ -83,7 +86,7 @@ function reduceCrossing(relations: {[p:string]: any}) {
             sequence.splice(sequence.indexOf(end), 0, start);
         } else {
             sequence.splice(sequence.indexOf(end), 1);
-            sequence.splice(sequence.indexOf(start), 0, start);
+            sequence.splice(sequence.indexOf(start), 0, end);
         }
         edges = calcCrossing(sequence, relations);
         maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
@@ -101,7 +104,7 @@ function reduceCrossing(relations: {[p:string]: any}) {
 function calcCrossing(sequence: number[], relations: {[p: string]: any}): {[p:string]:any} {
     const edges = {};
     for (let start in relations) {
-        if (relations[start]) {
+        if (relations[start].length !== 0) {
             for (let end of relations[start]) {
                 edges[start + ',' + end] = 0;
             }
@@ -157,11 +160,11 @@ export function calcCircleLayout(
     radius: number,
     relations: {[p: string]: any},
     ) {
-    const {filteredRealtions, leafRelations} = preprocess(relations);
-    const sequence = reduceCrossing(filteredRealtions);
+    const {filteredRelations, leafRelations} = preprocess(relations);
+    const sequence = reduceCrossing(filteredRelations);
     for (let start in leafRelations) {
         for (let end of leafRelations[start]) {
-            sequence.splice(sequence.indexOf(start), 0, end)
+            sequence.splice(sequence.indexOf(parseInt(start))+1, 0, end)
         }
     }
     const count = sequence.length;
@@ -181,7 +184,7 @@ export function calcCircleLayout(
         nodes.push(tmp);
     }
     for (let start in relations) {
-        if (relations[start]) {
+        if (relations[start].length !== 0) {
             for (let end of relations[start]) {
                 const tmp = {
                     start: parseInt(start),

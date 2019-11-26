@@ -174,8 +174,7 @@ export function calCommunity(rScriptPath: string,
     }
     for (let com in graph) {
         if (communityRelation[com]) {
-            // @ts-ignore
-            // communityRelation[com] = [...new Set(communityRelation[com])];
+            communityRelation[com] = Array.from(new Set(communityRelation[com]));
         } else {
             communityRelation[com] = [];
         }
