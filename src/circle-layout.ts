@@ -79,6 +79,7 @@ function reduceCrossing(relations: {[p:string]: any}) {
     let edges = calcCrossing(sequence, relations);
     let maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
     let currCrossing = edges[maxCrossing];
+    let tmpSequence = [...sequence];
     while (currCrossing < prevCrossing) {
         const [start, end] = maxCrossing.split(',').map(x => parseInt(x));
         if (degree[start] > degree[end]) {
@@ -90,10 +91,12 @@ function reduceCrossing(relations: {[p:string]: any}) {
         }
         edges = calcCrossing(sequence, relations);
         maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
+        if (currCrossing < edges[maxCrossing]) break;
         prevCrossing = currCrossing;
         currCrossing = edges[maxCrossing];
+        tmpSequence = [...sequence];
     }
-    return sequence;
+    return tmpSequence;
 }
 
 /**
