@@ -14,6 +14,7 @@ for (let key in presetPalettes) {
 export async function drawMap(
     svg: HTMLElement,
     data: RelationRes[],
+    clickTopic
 ) {
     const canvas = d3.select(svg);
     const defs = canvas.append("defs");
@@ -78,7 +79,8 @@ export async function drawMap(
             'Content-Type': 'application/json'
         },
     })).data;
-    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 : svg.clientWidth / 2;
+
+    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
     const {nodes, edges, sequence} = calcCircleLayout(
         {x: radius, y: radius},
         radius,
@@ -142,7 +144,17 @@ export async function drawMap(
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
     }
-
+    canvas.append('g')
+        .attr('id', 'comText')
+        .selectAll('text')
+        .data(nodes)
+        .enter()
+        .append('text')
+        .attr('font-size', 14)
+        .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+        .attr('y', d => d.cy + d.r + 24)
+        .text(d => topics[sequences[d.id][0]])
+        .attr('fill', '#000000');
     // 交互
     for (let com of nodes) {
         const nElement = document.getElementById(com.id + 'nodes');
@@ -171,6 +183,11 @@ export async function drawMap(
                     .attr('stroke', '#878787')
                     .attr('stroke-width', 2)
                     .attr('fill', 'none');
+                canvas.select('#comText')
+                    .selectAll('text')
+                    .data(nodes)
+                    .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+                    .attr('y', d => d.cy + d.r + 24);
                 for (let com of nodes) {
                     const tmp = calcCircleLayoutWithoutReduceCrossing(
                         {x: com.cx, y: com.cy},
@@ -196,6 +213,7 @@ export async function drawMap(
                         .attr('stroke-width', 2)
                         .attr('fill', 'none');
                 }
+                clickTopic(d.id);
             });
     }
     canvas.select('#com')
@@ -222,7 +240,11 @@ export async function drawMap(
                 .attr('d', d => link(d.path))
                 .attr('stroke-width', 2)
                 .attr('fill', 'none');
-
+            canvas.select('#comText')
+                .selectAll('text')
+                .data(nodes)
+                .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+                .attr('y', d => d.cy + d.r + 24);
             for (let com of nodes) {
                 const tmp = calcCircleLayoutWithoutReduceCrossing(
                     {x: com.cx, y: com.cy},
