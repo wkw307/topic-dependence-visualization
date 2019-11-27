@@ -198,11 +198,50 @@ export function calcCircleLayout(
     relations: {[p: string]: any},
     ) {
     const {filteredRelations, leafRelations} = preprocess(relations);
-    const sequence = reduceCrossing(filteredRelations);
+    let sequence = reduceCrossing(filteredRelations);
     for (let start in leafRelations) {
         for (let end of leafRelations[start]) {
             sequence.splice(sequence.indexOf(parseInt(start))+1, 0, end)
         }
+    }
+    const degree = {};
+    for (let start in relations) {
+        if (relations[start].length !== 0) {
+            for (let end of relations[start]) {
+                if (degree[start]) {
+                    degree[start]++;
+                } else {
+                    degree[start] = 1;
+                }
+                if (degree[end]) {
+                    degree[end] ++;
+                } else {
+                    degree[end] = 1;
+                }
+            }
+        }
+    }
+    // 将入度为0 出度最大的点放在第一个
+    const inDegree0 = [];
+    for (let start in relations) {
+        let flag = true;
+        for (let other in relations) {
+            if (other !== start) {
+                for (let end of relations[other]) {
+                    if (parseInt(start) === end) {
+                        flag = false;
+                    }
+                }
+            }
+        }
+        if (flag) {
+            inDegree0.push(parseInt(start));
+        }
+    }
+    if (inDegree0.length > 0) {
+        const initNode = inDegree0.reduce((acc, curr) => acc ? (degree[acc] > degree[curr] ? acc : curr) : curr);
+        const initIndex = sequence.indexOf(initNode);
+        sequence = sequence.slice(initIndex).concat(sequence.slice(0, initIndex));
     }
     return Object.assign({
         sequence
