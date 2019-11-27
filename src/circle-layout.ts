@@ -78,11 +78,33 @@ function reduceCrossing(relations: {[p:string]: any}) {
     let prevCrossing = Infinity;
     let edges = calcCrossing(sequence, relations);
     let maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
-    let currCrossing = edges[maxCrossing];
+    let currCrossing = calcSum(edges);
     let tmpSequence = [...sequence];
-    while (currCrossing < prevCrossing) {
-        const [start, end] = maxCrossing.split(',').map(x => parseInt(x));
-        if (degree[start] > degree[end]) {
+    while (currCrossing < prevCrossing && currCrossing > 0) {
+        let start, end;
+        // 最大交点数为1 单独考虑
+        if (edges[maxCrossing] === 1) {
+            const crossing1 = [];
+            for (let key in edges) {
+                if (edges[key] === 1) {
+                    crossing1.push(key.split(',').map(x => parseInt(x)));
+                }
+            }
+            let tmp = Infinity;
+            let tmpIndex = -1;
+            for (let i = 0; i < crossing1.length; i++) {
+                for (let id of crossing1[i]) {
+                    if (degree[id] < tmp) {
+                        tmpIndex = i;
+                        tmp = degree[id];
+                    }
+                }
+            }
+            [start, end] = crossing1[tmpIndex];
+        } else {
+            [start, end] = maxCrossing.split(',').map(x => parseInt(x));
+        }
+        if (degree[start] < degree[end]) {
             sequence.splice(sequence.indexOf(start), 1);
             sequence.splice(sequence.indexOf(end), 0, start);
         } else {
@@ -91,12 +113,20 @@ function reduceCrossing(relations: {[p:string]: any}) {
         }
         edges = calcCrossing(sequence, relations);
         maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
-        if (currCrossing < edges[maxCrossing]) break;
+        if (currCrossing < calcSum(edges)) break;
         prevCrossing = currCrossing;
-        currCrossing = edges[maxCrossing];
+        currCrossing = calcSum(edges);
         tmpSequence = [...sequence];
     }
     return tmpSequence;
+}
+
+function calcSum(obj: {[p:string]: number}) {
+    let result = 0;
+    for (let key in obj) {
+        result += obj[key];
+    }
+    return result;
 }
 
 /**
@@ -125,8 +155,8 @@ function calcCrossing(sequence: number[], relations: {[p: string]: any}): {[p:st
                 const u2Index = sequence.indexOf(u2);
                 const v2Index = sequence.indexOf(v2);
                 if (
-                    (whetherInRange(startIndex, endIndex, u2Index) && !whetherInRange(startIndex, endIndex, v2Index))
-                    || (!whetherInRange(startIndex, endIndex, u2Index) && whetherInRange(startIndex, endIndex, v2Index))
+                    (whetherInRange(startIndex, endIndex, u2Index) && whetherOutRange(startIndex, endIndex, v2Index))
+                    || (whetherOutRange(startIndex, endIndex, u2Index) && whetherInRange(startIndex, endIndex, v2Index))
                 ) {
                     edges[edge]++;
                 }
@@ -156,6 +186,10 @@ function calcLinkSourceTargetBetweenCircles(cx1, cy1, r1, cx2, cy2, r2){
  */
 function whetherInRange(start, end, target): boolean {
     return target < end && target > start;
+}
+
+function whetherOutRange(start, end, target): boolean {
+    return target > end || target < start;
 }
 
 export function calcCircleLayout(

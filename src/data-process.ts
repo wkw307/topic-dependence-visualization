@@ -83,7 +83,7 @@ export function preProcess(topics, relations) {
         if (topics.hasOwnProperty(topicId)) {
             let flag = true;
             for (let key in resultRelations) {
-                if (resultRelations[key].indexOf(topicId) !== -1) {
+                if (resultRelations[key].indexOf(parseInt(topicId)) !== -1) {
                     flag = false;
                     break;
                 }
