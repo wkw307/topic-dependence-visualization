@@ -92,17 +92,6 @@ export async function drawMap(
         topicId: undefined,
     };
     canvas.append('g')
-        .attr('id', 'com')
-        .selectAll('circle')
-        .data(nodes)
-        .enter()
-        .append('circle')
-        .attr('r', d => d.r)
-        .attr('cx', d => d.cx)
-        .attr('cy', d => d.cy)
-        .attr('id', d => d.id)
-        .attr('fill', (d, i) => colors[i][1]);
-    canvas.append('g')
         .attr('id', 'com2com')
         .selectAll('path')
         .data(edges)
@@ -113,6 +102,17 @@ export async function drawMap(
         .attr('stroke-width', 2)
         .attr('fill', 'none')
         .attr('marker-end', 'url(#arrow)');
+    canvas.append('g')
+        .attr('id', 'com')
+        .selectAll('circle')
+        .data(nodes)
+        .enter()
+        .append('circle')
+        .attr('r', d => d.r)
+        .attr('cx', d => d.cx)
+        .attr('cy', d => d.cy)
+        .attr('id', d => d.id)
+        .attr('fill', (d, i) => colors[i][1]);
     for (let com of nodes) {
         const tmp = calcCircleLayout(
             {x: com.cx, y: com.cy},
@@ -120,18 +120,6 @@ export async function drawMap(
             graph[com.id],
         );
         sequences[com.id] = tmp.sequence;
-        canvas.append('g')
-            .attr('id', com.id + 'nodes')
-            .selectAll('circle')
-            .data(tmp.nodes)
-            .enter()
-            .append('circle')
-            .attr('r', d => d.r)
-            .attr('cx', d => d.cx)
-            .attr('cy', d => d.cy)
-            .attr('id', d => d.id)
-            .attr('fill', colors[globalSequence.indexOf(com.id)][6]);
-
         canvas.append('g')
             .attr('id', com.id + 'edges')
             .selectAll('path')
@@ -143,6 +131,29 @@ export async function drawMap(
             .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
+        canvas.append('g')
+            .attr('id', com.id + 'nodes')
+            .selectAll('circle')
+            .data(tmp.nodes)
+            .enter()
+            .append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy)
+            .attr('id', d => d.id)
+            .attr('fill', colors[globalSequence.indexOf(com.id)][6]);
+        canvas.append('g')
+            .attr('id', com.id + 'text')
+            .selectAll('text')
+            .data(tmp.nodes)
+            .enter()
+            .append('text')
+            .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+            .attr('x', d => d.cx - d.r + 2)
+            .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+            .text(d => topics[d.id])
+            .attr('fill', '#ffffff')
+            .attr('cursor', 'pointer');
     }
     canvas.append('g')
         .attr('id', 'comText')
@@ -154,120 +165,149 @@ export async function drawMap(
         .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
         .attr('y', d => d.cy + d.r + 24)
         .text(d => topics[sequences[d.id][0]])
-        .attr('fill', '#000000');
+        .attr('fill', '#000000')
+        .attr('cursor', 'pointer');
     // 交互
     for (let com of nodes) {
         const nElement = document.getElementById(com.id + 'nodes');
         d3.select(nElement)
             .selectAll('circle')
-            .on('click', (d: any) => {
-                zoom.topicId = d.id;
-                zoom.com = com.id;
-                const {nodes, edges} = calcCircleLayoutWithoutReduceCrossing(
-                    {x: radius, y: radius},
-                    radius,
-                    communityRelation,
-                    globalSequence,
-                    com.id
-                );
-                canvas.select('#com')
-                    .selectAll('circle')
-                    .data(nodes)
-                    .attr('r', d => d.r)
-                    .attr('cx', d => d.cx)
-                    .attr('cy', d => d.cy);
-                canvas.select('#com2com')
-                    .selectAll('path')
-                    .data(edges)
-                    .attr('d', d => link(d.path))
-                    .attr('stroke', '#878787')
-                    .attr('stroke-width', 2)
-                    .attr('fill', 'none');
-                canvas.select('#comText')
-                    .selectAll('text')
-                    .data(nodes)
-                    .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
-                    .attr('y', d => d.cy + d.r + 24);
-                for (let com of nodes) {
-                    const tmp = calcCircleLayoutWithoutReduceCrossing(
-                        {x: com.cx, y: com.cy},
-                        com.r,
-                        graph[com.id],
-                        sequences[com.id],
-                        com.id === zoom.com ? d.id : undefined,
-                    );
-                    const nodeElement = document.getElementById(com.id + 'nodes');
-                    // @ts-ignore
-                    d3.select(nodeElement)
-                        .selectAll('circle')
-                        .data(tmp.nodes)
-                        .attr('r', d => d.r)
-                        .attr('cx', d => d.cx)
-                        .attr('cy', d => d.cy);
-                    const edgeElement = document.getElementById(com.id + 'edges');
-                    // @ts-ignore
-                    d3.select(edgeElement)
-                        .selectAll('path')
-                        .data(tmp.edges)
-                        .attr('d', d => link(d.path))
-                        .attr('stroke-width', 2)
-                        .attr('fill', 'none');
-                }
-                clickTopic(d.id);
-            });
+            .on('click', (d: any) => clickNode(d, com));
+        const tElement = document.getElementById(com.id + 'text');
+        d3.select(tElement)
+            .selectAll('text')
+            .on('click', (d: any) => clickNode(d, com));
     }
     canvas.select('#com')
         .selectAll('circle')
-        .on('click', (d: any) => {
-            zoom.com = d.id;
-            const {nodes, edges} = calcCircleLayoutWithoutReduceCrossing(
-                {x: radius, y: radius},
-                radius,
-                communityRelation,
-                globalSequence,
-                d.id
+        .on('click', d => clickCom(d));
+    canvas.select('#comText')
+        .selectAll('text')
+        .on('click', d => clickCom(d));
+
+    function clickCom(d: any) {
+        zoom.com = d.id;
+        const {nodes, edges} = calcCircleLayoutWithoutReduceCrossing(
+            {x: radius, y: radius},
+            radius,
+            communityRelation,
+            globalSequence,
+            d.id
+        );
+        canvas.select('#com')
+            .selectAll('circle')
+            .data(nodes)
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy)
+            .attr('id', d => d.id);
+        canvas.select('#com2com')
+            .selectAll('path')
+            .data(edges)
+            .attr('d', d => link(d.path))
+            .attr('stroke-width', 2)
+            .attr('fill', 'none');
+        canvas.select('#comText')
+            .selectAll('text')
+            .data(nodes)
+            .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+            .attr('y', d => d.cy + d.r + 24);
+        for (let com of nodes) {
+            const tmp = calcCircleLayoutWithoutReduceCrossing(
+                {x: com.cx, y: com.cy},
+                com.r,
+                graph[com.id],
+                sequences[com.id],
+                undefined
             );
-            canvas.select('#com')
+            const nodeElement = document.getElementById(com.id + 'nodes');
+            d3.select(nodeElement)
                 .selectAll('circle')
-                .data(nodes)
+                .data(tmp.nodes)
                 .attr('r', d => d.r)
                 .attr('cx', d => d.cx)
                 .attr('cy', d => d.cy)
                 .attr('id', d => d.id);
-            canvas.select('#com2com')
+            const edgeElement = document.getElementById(com.id + 'edges');
+            d3.select(edgeElement)
                 .selectAll('path')
-                .data(edges)
+                .data(tmp.edges)
                 .attr('d', d => link(d.path))
                 .attr('stroke-width', 2)
                 .attr('fill', 'none');
-            canvas.select('#comText')
+            const textElement = document.getElementById(com.id + 'text');
+            d3.select(textElement)
                 .selectAll('text')
-                .data(nodes)
-                .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
-                .attr('y', d => d.cy + d.r + 24);
-            for (let com of nodes) {
-                const tmp = calcCircleLayoutWithoutReduceCrossing(
-                    {x: com.cx, y: com.cy},
-                    com.r,
-                    graph[com.id],
-                    sequences[com.id],
-                    undefined
-                );
-                const nodeElement = document.getElementById(com.id + 'nodes');
-                d3.select(nodeElement)
-                    .selectAll('circle')
-                    .data(tmp.nodes)
-                    .attr('r', d => d.r)
-                    .attr('cx', d => d.cx)
-                    .attr('cy', d => d.cy)
-                    .attr('id', d => d.id);
-                const edgeElement = document.getElementById(com.id + 'edges');
-                d3.select(edgeElement)
-                    .selectAll('path')
-                    .data(tmp.edges)
-                    .attr('d', d => link(d.path))
-                    .attr('stroke-width', 2)
-                    .attr('fill', 'none');
-            }
-        });
+                .data(tmp.nodes)
+                .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+                .attr('x', d => d.cx - d.r + 2)
+                .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+                .text(d => topics[d.id])
+                .attr('fill', '#ffffff');
+        }
+    }
+
+    function clickNode(d: any, com) {
+        zoom.topicId = d.id;
+        zoom.com = com.id;
+        const {nodes, edges} = calcCircleLayoutWithoutReduceCrossing(
+            {x: radius, y: radius},
+            radius,
+            communityRelation,
+            globalSequence,
+            com.id
+        );
+        canvas.select('#com')
+            .selectAll('circle')
+            .data(nodes)
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy);
+        canvas.select('#com2com')
+            .selectAll('path')
+            .data(edges)
+            .attr('d', d => link(d.path))
+            .attr('stroke', '#878787')
+            .attr('stroke-width', 2)
+            .attr('fill', 'none');
+        canvas.select('#comText')
+            .selectAll('text')
+            .data(nodes)
+            .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+            .attr('y', d => d.cy + d.r + 24);
+        for (let com of nodes) {
+            const tmp = calcCircleLayoutWithoutReduceCrossing(
+                {x: com.cx, y: com.cy},
+                com.r,
+                graph[com.id],
+                sequences[com.id],
+                com.id === zoom.com ? d.id : undefined,
+            );
+            const nodeElement = document.getElementById(com.id + 'nodes');
+            d3.select(nodeElement)
+                .selectAll('circle')
+                .data(tmp.nodes)
+                .attr('r', d => d.r)
+                .attr('cx', d => d.cx)
+                .attr('cy', d => d.cy);
+            const edgeElement = document.getElementById(com.id + 'edges');
+            d3.select(edgeElement)
+                .selectAll('path')
+                .data(tmp.edges)
+                .attr('d', d => link(d.path))
+                .attr('stroke-width', 2)
+                .attr('fill', 'none');
+            const textElement = document.getElementById(com.id + 'text');
+            d3.select(textElement)
+                .selectAll('text')
+                .data(tmp.nodes)
+                .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+                .attr('x', d => d.cx - d.r + 2)
+                .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+                .text(d => topics[d.id])
+                .attr('fill', '#ffffff');
+        }
+        clickTopic(d.id);
+    }
 }
+
