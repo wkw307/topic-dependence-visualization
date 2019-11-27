@@ -170,42 +170,124 @@ export function calcCircleLayout(
             sequence.splice(sequence.indexOf(parseInt(start))+1, 0, end)
         }
     }
-    const count = sequence.length;
-    const r = 0.7 * radius * Math.sin(Math.PI / count) / (1 + Math.sin(Math.PI / count));
-    const angle = Math.PI * 2 / count;
-    const nodes = [];
-    const edges = [];
-    const node2position = {};
-    for (let i = 0; i < count; i++) {
-        const tmp = {
-            r,
-            id: sequence[i],
-            cx: center.x + (radius - r) * Math.sin(angle * i),
-            cy: center.y - (radius - r) * Math.cos(angle * i),
-        };
-        node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
-        nodes.push(tmp);
-    }
-    for (let start in relations) {
-        if (relations[start].length !== 0) {
-            for (let end of relations[start]) {
-                const tmp = {
-                    start: parseInt(start),
-                    end: parseInt(end),
-                    path: calcLinkSourceTargetBetweenCircles(
-                        node2position[start][0],
-                        node2position[start][1],
-                        node2position[start][2],
-                        node2position[end][0],
-                        node2position[end][1],
-                        node2position[end][2]),
-                };
-                edges.push(tmp);
-            }
-        }
-    }
-    return {
-        nodes,
-        edges,
-    }
+    return Object.assign({
+        sequence
+        },
+        calcCircleLayoutWithoutReduceCrossing(
+            center,
+            radius,
+            relations,
+            sequence,
+            undefined
+        ));
+}
+
+export function calcCircleLayoutWithoutReduceCrossing(
+    center: {x: number; y: number;},
+    radius: number,
+    relations: {[p: string]: any},
+    sequence: number[],
+    focus: number | undefined
+): {nodes: any[], edges: any[]} {
+   if (focus === undefined) {
+       const count = sequence.length;
+       const r = 0.7 * radius * Math.sin(Math.PI / count) / (1 + Math.sin(Math.PI / count));
+       const angle = Math.PI * 2 / count;
+       const nodes = [];
+       const edges = [];
+       const node2position = {};
+       for (let i = 0; i < count; i++) {
+           const tmp = {
+               r,
+               id: sequence[i],
+               cx: center.x + (radius - r) * Math.sin(angle * i),
+               cy: center.y - (radius - r) * Math.cos(angle * i),
+           };
+           node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+           nodes.push(tmp);
+       }
+       for (let start in relations) {
+           if (relations[start].length !== 0) {
+               for (let end of relations[start]) {
+                   const tmp = {
+                       start: parseInt(start),
+                       end: parseInt(end),
+                       path: calcLinkSourceTargetBetweenCircles(
+                           node2position[start][0],
+                           node2position[start][1],
+                           node2position[start][2],
+                           node2position[end][0],
+                           node2position[end][1],
+                           node2position[end][2]),
+                   };
+                   edges.push(tmp);
+               }
+           }
+       }
+       return {
+           nodes,
+           edges,
+       }
+   } else {
+       const count = sequence.length;
+       const r = 0.7 * radius * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
+       const R = 1.4 * radius * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
+       const angle = Math.PI * 2 / (count + 1);
+       const nodes = [];
+       const edges = [];
+       const node2position = {};
+       for (let i = 0; i < count; i++) {
+           if (sequence.indexOf(focus) > i) {
+               const tmp = {
+                   r,
+                   id: sequence[i],
+                   cx: center.x + (radius - r) * Math.sin(angle * i),
+                   cy: center.y - (radius - r) * Math.cos(angle * i),
+               };
+               node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+               nodes.push(tmp);
+           } else if (sequence.indexOf(focus) === i) {
+               const tmp = {
+                   r: R,
+                   id: sequence[i],
+                   cx: center.x + (radius - R) * Math.sin(angle * i + angle / 2),
+                   cy: center.y - (radius - R) * Math.cos(angle * i + angle / 2),
+               };
+               node2position[sequence[i]] = [tmp.cx, tmp.cy, R];
+               nodes.push(tmp);
+           } else {
+               const tmp = {
+                   r,
+                   id: sequence[i],
+                   cx: center.x + (radius - r) * Math.sin(angle * i + angle),
+                   cy: center.y - (radius - r) * Math.cos(angle * i + angle),
+               };
+               node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+               nodes.push(tmp);
+           }
+
+       }
+       for (let start in relations) {
+           if (relations[start].length !== 0) {
+               for (let end of relations[start]) {
+                   const tmp = {
+                       start: parseInt(start),
+                       end: parseInt(end),
+                       path: calcLinkSourceTargetBetweenCircles(
+                           node2position[start][0],
+                           node2position[start][1],
+                           node2position[start][2],
+                           node2position[end][0],
+                           node2position[end][1],
+                           node2position[end][2]),
+                   };
+                   edges.push(tmp);
+               }
+           }
+       }
+       return {
+           nodes,
+           edges,
+       }
+   }
 }
