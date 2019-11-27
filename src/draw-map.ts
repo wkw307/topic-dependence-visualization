@@ -1,9 +1,15 @@
 import * as d3 from 'd3';
 import * as path from 'path';
 import axios from 'axios';
+import {presetPalettes} from '@ant-design/colors';
 
 import {RelationRes} from "./data-process";
 import {calcCircleLayout, calcCircleLayoutWithoutReduceCrossing} from "./circle-layout";
+
+const colors = [];
+for (let key in presetPalettes) {
+    colors.push(presetPalettes[key].slice(0, 10));
+}
 
 export async function drawMap(
     svg: HTMLElement,
@@ -11,7 +17,7 @@ export async function drawMap(
 ) {
     const canvas = d3.select(svg);
     const defs = canvas.append("defs");
-    const arrowMarker = defs.append("marker")
+    const arrow = defs.append("marker")
         .attr("id","arrow")
         .attr("markerUnits","strokeWidth")
         .attr("markerWidth","8")
@@ -21,9 +27,24 @@ export async function drawMap(
         .attr("refY","6")
         .attr("orient","auto");
     const arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
-    arrowMarker.append("path")
+    arrow.append("path")
         .attr("d",arrow_path)
-        .attr("fill", "#000");
+        .attr("fill", '#000000');
+    for (let i = 0; i < colors.length; i++) {
+        const arrowMarker = defs.append("marker")
+            .attr("id","arrow" + i)
+            .attr("markerUnits","strokeWidth")
+            .attr("markerWidth","8")
+            .attr("markerHeight","8")
+            .attr("viewBox","0 0 12 12")
+            .attr("refX","6")
+            .attr("refY","6")
+            .attr("orient","auto");
+        const arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
+        arrowMarker.append("path")
+            .attr("d",arrow_path)
+            .attr("fill", colors[i][9]);
+    }
     const link = d3.line()
     // @ts-ignore
         .x(function(d){return d.x})
@@ -78,7 +99,7 @@ export async function drawMap(
         .attr('cx', d => d.cx)
         .attr('cy', d => d.cy)
         .attr('id', d => d.id)
-        .attr('fill', '#B7B7B7');
+        .attr('fill', (d, i) => colors[i][1]);
     canvas.append('g')
         .attr('id', 'com2com')
         .selectAll('path')
@@ -107,7 +128,7 @@ export async function drawMap(
             .attr('cx', d => d.cx)
             .attr('cy', d => d.cy)
             .attr('id', d => d.id)
-            .attr('fill', '#878787');
+            .attr('fill', colors[globalSequence.indexOf(com.id)][6]);
 
         canvas.append('g')
             .attr('id', com.id + 'edges')
@@ -116,10 +137,10 @@ export async function drawMap(
             .enter()
             .append('path')
             .attr('d', d => link(d.path))
-            .attr('stroke', '#5A5A5A')
+            .attr('stroke', colors[globalSequence.indexOf(com.id)][8])
             .attr('stroke-width', 2)
             .attr('fill', 'none')
-            .attr('marker-end', 'url(#arrow)');
+            .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
     }
 
     // 交互
@@ -142,17 +163,14 @@ export async function drawMap(
                     .data(nodes)
                     .attr('r', d => d.r)
                     .attr('cx', d => d.cx)
-                    .attr('cy', d => d.cy)
-                    .attr('id', d => d.id)
-                    .attr('fill', '#B7B7B7');
+                    .attr('cy', d => d.cy);
                 canvas.select('#com2com')
                     .selectAll('path')
                     .data(edges)
                     .attr('d', d => link(d.path))
                     .attr('stroke', '#878787')
                     .attr('stroke-width', 2)
-                    .attr('fill', 'none')
-                    .attr('marker-end', 'url(#arrow)');
+                    .attr('fill', 'none');
                 for (let com of nodes) {
                     const tmp = calcCircleLayoutWithoutReduceCrossing(
                         {x: com.cx, y: com.cy},
@@ -168,19 +186,15 @@ export async function drawMap(
                         .data(tmp.nodes)
                         .attr('r', d => d.r)
                         .attr('cx', d => d.cx)
-                        .attr('cy', d => d.cy)
-                        .attr('id', d => d.id)
-                        .attr('fill', '#878787');
+                        .attr('cy', d => d.cy);
                     const edgeElement = document.getElementById(com.id + 'edges');
                     // @ts-ignore
                     d3.select(edgeElement)
                         .selectAll('path')
                         .data(tmp.edges)
                         .attr('d', d => link(d.path))
-                        .attr('stroke', '#5A5A5A')
                         .attr('stroke-width', 2)
-                        .attr('fill', 'none')
-                        .attr('marker-end', 'url(#arrow)');
+                        .attr('fill', 'none');
                 }
             });
     }
@@ -201,16 +215,13 @@ export async function drawMap(
                 .attr('r', d => d.r)
                 .attr('cx', d => d.cx)
                 .attr('cy', d => d.cy)
-                .attr('id', d => d.id)
-                .attr('fill', '#B7B7B7');
+                .attr('id', d => d.id);
             canvas.select('#com2com')
                 .selectAll('path')
                 .data(edges)
                 .attr('d', d => link(d.path))
-                .attr('stroke', '#878787')
                 .attr('stroke-width', 2)
-                .attr('fill', 'none')
-                .attr('marker-end', 'url(#arrow)');
+                .attr('fill', 'none');
 
             for (let com of nodes) {
                 const tmp = calcCircleLayoutWithoutReduceCrossing(
@@ -221,25 +232,20 @@ export async function drawMap(
                     undefined
                 );
                 const nodeElement = document.getElementById(com.id + 'nodes');
-                // @ts-ignore
                 d3.select(nodeElement)
                     .selectAll('circle')
                     .data(tmp.nodes)
                     .attr('r', d => d.r)
                     .attr('cx', d => d.cx)
                     .attr('cy', d => d.cy)
-                    .attr('id', d => d.id)
-                    .attr('fill', '#878787');
+                    .attr('id', d => d.id);
                 const edgeElement = document.getElementById(com.id + 'edges');
-                // @ts-ignore
                 d3.select(edgeElement)
                     .selectAll('path')
                     .data(tmp.edges)
                     .attr('d', d => link(d.path))
-                    .attr('stroke', '#5A5A5A')
                     .attr('stroke-width', 2)
-                    .attr('fill', 'none')
-                    .attr('marker-end', 'url(#arrow)');
+                    .attr('fill', 'none');
             }
         });
 }
