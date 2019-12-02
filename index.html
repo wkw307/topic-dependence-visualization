@@ -6,13 +6,33 @@
     <meta http-equiv="X-UA-Compatible">
     <title>Topic Dependence Visualization</title>
     <style>
-
+        pre {
+            white-space: pre-wrap;
+        }
+        .assemble {
+            border-bottom: 2px solid #666666;
+            max-height: 300px;
+            overflow: auto;
+        }
     </style>
 </head>
 
 <body>
 <div>
-    <svg id="map" width="500" height="500" />
+    <div style="display: inline">
+        <svg id="map" width="800" height="800" />
+    </div>
+    <div style="display: inline">
+        <svg id="tree" width="300" height="400"></svg>
+    </div>
+    <div style="display: inline; position: absolute; margin: 20px;word-wrap: break-word;">
+        <span>分面: <span id="facet"></span></span>
+        <span style="padding-left: 16px;">碎片数量: <span id="assembleNumber"></span></span>
+        <div id="list" style="max-height: calc(100vh - 80px); overflow: auto; max-width: calc(100vw - 700px);">
+        </div>
+    </div>
+</div>
+<div id="topic-list">
 </div>
 <script type="text/javascript" src="./dist/bundle.js"></script>
 </body>

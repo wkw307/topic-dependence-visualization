@@ -307,7 +307,7 @@ export async function drawMap(
                 .text(d => topics[d.id])
                 .attr('fill', '#ffffff');
         }
-        clickTopic(d.id);
+        clickTopic(d.id, topics[d.id]);
     }
 }
 
