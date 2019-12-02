@@ -418,19 +418,12 @@ async function clickFacet(facetId: number) {
 }
 const treesvg = document.getElementById('tree');
 
-axios.get('http://yotta.xjtushilei.com:8083/dependency/getDependenciesByDomainName?domainName=高等数学')
-    .then(res => {
-        const data = res.data.data;
-        const svg = document.getElementById('map');
-        drawMap(svg, Data, (topicId, topicName) => {
-            console.log(topicId, topicName)
-            if (topicId !== -1 && topicName) {
-                axios.post('http://yotta.xjtushilei.com:8083/topic/getCompleteTopicByTopicName?topicName=' + encodeURIComponent(topicName) + '&hasFragment=emptyAssembleContent').then(res => {
-                    drawTree(treesvg, res.data.data, clickFacet);
-                }).catch(err => console.log(err))
-            }
-        });
-    })
-    .catch(error => {
-        console.log(error);
-    });
+const svg = document.getElementById('map');
+drawMap(svg, treesvg, Data, (topicId, topicName) => {
+    console.log(topicId, topicName)
+    if (topicId !== -1 && topicName) {
+        axios.post('http://yotta.xjtushilei.com:8083/topic/getCompleteTopicByTopicName?topicName=' + encodeURIComponent(topicName) + '&hasFragment=emptyAssembleContent').then(res => {
+            // drawTree(treesvg, res.data.data, clickFacet);
+        }).catch(err => console.log(err))
+    }
+});

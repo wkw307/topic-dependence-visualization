@@ -364,3 +364,53 @@ export function calcCircleLayoutWithoutReduceCrossing(
        }
    }
 }
+
+export function calcCircleLayoutSecondLayer(
+    center: {x: number; y: number},
+    radius: number,
+    relations: {[p:string]:any},
+    sequence: number[],
+    focus: number,
+) {
+    const count = sequence.length;
+    const r = 0.4 * radius * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
+    const angle = Math.PI * 2 / (count + 1);
+    const nodes = [];
+    const edges = [];
+    const node2position = {};
+    for (let i = 0; i < count; i++) {
+        if (sequence.indexOf(focus) > i) {
+            const tmp = {
+                r,
+                id: sequence[i],
+                cx: center.x + (radius - r) * Math.sin(angle * i),
+                cy: center.y - (radius - r) * Math.cos(angle * i),
+            };
+            node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+            nodes.push(tmp);
+        } else if (sequence.indexOf(focus) === i) {
+            const tmp = {
+                r: 0.9 * ( radius - 2 * r ),
+                id: sequence[i],
+                cx: center.x,
+                cy: center.y,
+            };
+            node2position[sequence[i]] = [tmp.cx, tmp.cy, tmp.r];
+            nodes.push(tmp);
+        } else {
+            const tmp = {
+                r,
+                id: sequence[i],
+                cx: center.x + (radius - r) * Math.sin(angle * i + angle),
+                cy: center.y - (radius - r) * Math.cos(angle * i + angle),
+            };
+            node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+            nodes.push(tmp);
+        }
+
+    }
+    return {
+        nodes,
+        edges,
+    }
+}

@@ -19,11 +19,9 @@
 
 <body>
 <div>
-    <div style="display: inline">
+    <div style="display: inline; position: relative;">
         <svg id="map" width="800" height="800" />
-    </div>
-    <div style="display: inline">
-        <svg id="tree" width="300" height="400"></svg>
+        <svg id="tree" style="position: absolute;left: -0;" />
     </div>
     <div style="display: inline; position: absolute; margin: 20px;word-wrap: break-word;">
         <span>分面: <span id="facet"></span></span>
@@ -31,8 +29,6 @@
         <div id="list" style="max-height: calc(100vh - 80px); overflow: auto; max-width: calc(100vw - 700px);">
         </div>
     </div>
-</div>
-<div id="topic-list">
 </div>
 <script type="text/javascript" src="./dist/bundle.js"></script>
 </body>
