@@ -182,9 +182,16 @@ export async function drawMap(
             .data(tmp.nodes)
             .enter()
             .append('text')
-            .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+            .attr('font-size', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                if (tmp > 24) {
+                    return 24;
+                } else {
+                    return tmp;
+                }
+            })
             .attr('x', d => d.cx - d.r + 2)
-            .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+            .attr('y', d => d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[d.id]))
             .text(d => topics[d.id])
             .attr('fill', '#ffffff')
             .attr('cursor', 'pointer');
@@ -196,7 +203,7 @@ export async function drawMap(
         .enter()
         .append('text')
         .attr('font-size', 14)
-        .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+        .attr('x', d => d.cx - 14 * judgementStringLengthWithChinese(topics[sequences[d.id][0]]) / 2)
         .attr('y', d => d.cy + d.r + 24)
         .text(d => topics[sequences[d.id][0]])
         .attr('fill', '#000000')
@@ -287,7 +294,7 @@ export async function drawMap(
             .data(nodes)
             .transition()
             .delay(300)
-            .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
+            .attr('x', d => d.cx - 14 * judgementStringLengthWithChinese(topics[sequences[d.id][0]]) / 2)
             .attr('y', d => d.cy + d.r + 24)
             .attr('font-size', 14)
             .attr('display', 'inline');
@@ -326,9 +333,23 @@ export async function drawMap(
                 .data(tmp.nodes)
                 .transition()
                 .delay(300)
-                .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+                .attr('font-size', d => {
+                    const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                    if (tmp > 24) {
+                        return 24;
+                    } else {
+                        return tmp;
+                    }
+                })
                 .attr('x', d => d.cx - d.r + 2)
-                .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+                .attr('y', d => {
+                    const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                    if (tmp > 24) {
+                        return d.cy + 12;
+                    } else {
+                        return d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[d.id]);
+                    }
+                })
                 .text(d => topics[d.id])
                 .attr('fill', '#ffffff')
                 .attr('display', 'inline');
@@ -365,12 +386,22 @@ export async function drawMap(
             .transition()
             .delay(300)
             .attr('x', d => d.cx - d.r + 2)
-            .attr('y', d => d.cy + (d.r - 2) / topics[sequences[d.id][0]].length)
+            .attr('y', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                if (tmp > 24) {
+                    return d.cy + 12;
+                }
+                return d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+            })
             .attr('font-size', d => {
                 if (d.id === id) {
                     return 0;
                 } else {
-                    return (d.r * 2 - 4) / topics[sequences[d.id][0]].length;
+                    const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                    if (tmp > 24) {
+                        return 24;
+                    }
+                    return tmp;
                 }
             });
         for (let com of nodes) {
@@ -422,9 +453,23 @@ export async function drawMap(
                     .data(tmp.nodes)
                     .transition()
                     .delay(300)
-                    .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+                    .attr('font-size', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        if (tmp > 24) {
+                            return 24;
+                        } else {
+                            return tmp;
+                        }
+                    })
                     .attr('x', d => d.cx - d.r + 2)
-                    .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+                    .attr('y', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        if (tmp > 24) {
+                            return d.cy + 12;
+                        } else {
+                            return d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[d.id]);
+                        }
+                    })
                     .text(d => topics[d.id])
                     .attr('fill', '#ffffff')
                     .attr('display', 'inline');
@@ -494,12 +539,24 @@ export async function drawMap(
             .transition()
             .delay(300)
             .attr('x', d => d.cx - d.r + 2)
-            .attr('y', d => d.cy + (d.r - 2) / topics[sequences[d.id][0]].length)
+            .attr('y', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                if (tmp > 24) {
+                    return d.cy + 12;
+                } else {
+                    return d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                }
+            })
             .attr('font-size', d => {
                 if (d.id === c.id) {
                     return 0;
                 } else {
-                    return (d.r * 2 - 4) / topics[sequences[d.id][0]].length;
+                    const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                    if (tmp > 24) {
+                        return 24;
+                    } else {
+                        return tmp;
+                    }
                 }
             });
         for (let com of nodes) {
@@ -541,9 +598,23 @@ export async function drawMap(
                 d3.select(textElement)
                     .selectAll('text')
                     .data(tmp.nodes)
-                    .attr('font-size', d => (d.r * 2 - 4) / topics[d.id].length)
+                    .attr('font-size', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        if (tmp > 24) {
+                            return 24;
+                        } else {
+                            return tmp;
+                        }
+                    })
                     .attr('x', d => d.cx - d.r + 2)
-                    .attr('y', d => d.cy + (d.r - 2) / topics[d.id].length)
+                    .attr('y', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        if (tmp > 24) {
+                            return d.cy + 12;
+                        } else {
+                            return d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[d.id]);
+                        }
+                    })
                     .text(d => topics[d.id])
                     .attr('fill', '#ffffff')
                     .attr('display', d => d.id === id ? 'none' : 'inline');
@@ -643,3 +714,14 @@ export async function drawMap(
     }
 }
 
+function judgementStringLengthWithChinese(str: string): number {
+    let result = 0;
+    for (let i = 0; i < str.length; i++) {
+        if (/[a-z0-9\+\-\*\\\|\(\)\&\^\%\$\#\@\!\,\.\?\<\>\/]/.test(str[i])) {
+            result += 0.5;
+        } else {
+            result += 1;
+        }
+    }
+    return result;
+}
