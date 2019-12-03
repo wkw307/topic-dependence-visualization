@@ -414,3 +414,178 @@ export function calcCircleLayoutSecondLayer(
         edges,
     }
 }
+
+export function calcEdgeWithSelectedNode(
+    center: {x: number; y: number},
+    radius: number,
+    relations: {[p:string]:any},
+    nodes: {
+       r: number;
+       id: number;
+       cx: number;
+        cy: number;
+    }[],
+    focus: number,
+) {
+    const neighbours = [];
+    for (let start in relations) {
+        if (relations[start].length !== 0) {
+            if (relations[start].indexOf(focus) !== -1){
+                neighbours.push(parseInt(start));
+            }
+        }
+    }
+    const edges = [];
+    for (let end of neighbours) {
+        const n = nodes.filter(x => x.id === end)[0];
+        edges.push(calcLinkSourceTargetBetweenRectAndCircle(
+            center.x,
+            center.y,
+            radius,
+            n.cx,
+            n.cy,
+            n.r,
+            false,
+        ));
+    }
+    for (let end of relations[focus]) {
+        const n = nodes.filter(x => x.id === end)[0];
+        edges.push(calcLinkSourceTargetBetweenRectAndCircle(
+            center.x,
+            center.y,
+            radius,
+            n.cx,
+            n.cy,
+            n.r,
+            true,
+        ));
+    }
+    return edges;
+}
+
+export function calcLinkSourceTargetBetweenRectAndCircle(
+   cx1: number,
+   cy1: number,
+   r1: number,
+   cx2: number,
+   cy2: number,
+   r2: number,
+   direction: boolean
+) {
+    const width = (r1 - 2 * r2) / 5 * 3;
+    const height = (r1 - 2 * r2) / 5 * 4;
+    let x1, x2, y1, y2;
+    if (cx1 < cx2 && Math.abs((cy1 - cy2)/(cx1 - cx2)) <= 0.8) {
+        x1 = cx1 + width;
+        y1 = cy1 - (cy1 - cy2) / (cx2 - cx1) * width;
+        x2 = cx1 + (cx2 - cx1) / (r1 - r2) * (r1 - 2 * r2);
+        y2 = cy1 - (cy1 - cy2) / (r1 - r2) * (r1 - 2 * r2);
+    } else if (cx1 > cx2 && Math.abs((cy1 - cy2)/(cx1 - cx2)) <= 0.8) {
+        x1 = cx1 - width;
+        y1 = cy1 - (cy1 - cy2) / (cx1 - cx2) * width;
+        x2 = cx1 - (cx1 - cx2) / (r1 - r2) * (r1 - 2 * r2);
+        y2 = cy1 - (cy1 - cy2) / (r1 - r2) * (r1 - 2 * r2);
+    } else if (cx1 < cx2 && Math.abs((cy1 - cy2)/(cx1 - cx2)) > 0.8) {
+        if (cy1 < cy2) {
+            y1 = cy1 + height;
+            x1 = cx1 + height / (cy2 - cy1) * (cx2 - cx1);
+            x2 = cx1 + (cx2 - cx1) / (r1 - r2) * (r1 -2 * r2);
+            y2 = cy1 + (cy2 - cy1) / (r1 - r2) * (r1 -2 * r2);
+        } else {
+            y1 = cy1 - height;
+            x1 = cx1 + height / (cy1 - cy2) * (cx2 - cx1);
+            x2 = cx1 + (cx2 - cx1) / (r1 - r2) * (r1 -2 * r2);
+            y2 = cy1 - (cy1 - cy2) / (r1 - r2) * (r1 -2 * r2);
+        }
+    } else if (cx1 > cx2 && Math.abs((cy1 - cy2)/(cx1 - cx2)) > 0.8) {
+        if (cy1 < cy2) {
+            y1 = cy1 + height;
+            x1 = cx1 - height / (cy2 - cy1) * (cx1 - cx2);
+            x2 = cx1 - (cx1 - cx2) / (r1 - r2) * (r1 -2 * r2);
+            y2 = cy1 + (cy2 - cy1) / (r1 - r2) * (r1 -2 * r2);
+        } else {
+            y1 = cy1 - height;
+            x1 = cx1 - height / (cy1 - cy2) * (cx1 - cx2);
+            x2 = cx1 - (cx1 - cx2) / (r1 - r2) * (r1 -2 * r2);
+            y2 = cy1 - (cy1 - cy2) / (r1 - r2) * (r1 -2 * r2);
+        }
+    } else {
+        x1 = cx1;
+        x2 = cx1;
+        if (cy1 < cy2) {
+            y1 = cy1 + height;
+            y2 = cy1 + r1 - 2 * r2;
+        } else {
+            y1 = cy1 - height;
+            y2 = cy1 - r1 + 2 * r2;
+        }
+    }
+    if (direction) {
+        return [{'x': x1, 'y': y1}, {'x': x2, 'y': y2}];
+    } else {
+        return [{'x': x2, 'y': y2}, {'x': x1, 'y': y1}];
+    }
+
+}
+
+export function calcEdgeWithSelectedNodeCrossCom(
+    center: {x: number; y: number},
+    radius: number,
+    focus: number,
+    relationCrossCommunity,
+    topicId2Community,
+    coms
+) {
+    const edges = [];
+    for (let edge of relationCrossCommunity) {
+        if (edge[0] === focus) {
+            if (edges.filter(x => x.end === topicId2Community[edge[1]]).length > 0) {
+                for (let e of edges) {
+                    if (e.end === topicId2Community[edge[1]]) {
+                        e.topics.push(edge[1]);
+                    }
+                }
+            } else {
+                const com = coms.filter(x => x.id === topicId2Community[edge[1]])[0];
+                edges.push({
+                    start: topicId2Community[focus],
+                    end: topicId2Community[edge[1]],
+                    topics: [edge[1]],
+                    path: calcLinkSourceTargetBetweenCircles(
+                        center.x,
+                        center.y,
+                        radius,
+                        com.cx,
+                        com.cy,
+                        com.r
+                    ),
+                });
+            }
+        }
+        if (edge[1] === focus) {
+            if (edges.filter(x => x.start === topicId2Community[edge[0]]).length > 0) {
+                for (let e of edges) {
+                    if (e.start === topicId2Community[edge[0]]) {
+                        e.topics.push(edge[0]);
+                    }
+                }
+            } else {
+                const com = coms.filter(x => x.id === topicId2Community[edge[0]])[0];
+                edges.push({
+                    start: topicId2Community[edge[0]],
+                    end: topicId2Community[focus],
+                    topics: [edge[0]],
+                    path: calcLinkSourceTargetBetweenCircles(
+                        com.cx,
+                        com.cy,
+                        com.r,
+                        center.x,
+                        center.y,
+                        radius,
+                    ),
+                });
+            }
+        }
+    }
+    return edges;
+}

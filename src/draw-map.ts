@@ -5,7 +5,12 @@ import {presetPalettes} from '@ant-design/colors';
 import {drawTree} from '../module/facetTree';
 
 import {RelationRes} from "./data-process";
-import {calcCircleLayout, calcCircleLayoutSecondLayer, calcCircleLayoutWithoutReduceCrossing} from "./circle-layout";
+import {
+    calcCircleLayout,
+    calcCircleLayoutSecondLayer,
+    calcCircleLayoutWithoutReduceCrossing,
+    calcEdgeWithSelectedNode, calcEdgeWithSelectedNodeCrossCom
+} from "./circle-layout";
 
 const colors = [];
 for (let key in presetPalettes) {
@@ -20,6 +25,13 @@ export async function drawMap(
 ) {
     let layer = 0;
     const canvas = d3.select(svg);
+    const divTooltip = d3.select('body').append('div')
+        .style('position', 'absolute')
+        .style('opacity', 0)
+        .style('text-align', 'center')
+        .style('font-size', '6px')
+        .style('background-color', '#ffffb8')
+        .style('padding', '1px 3px');
     const defs = canvas.append("defs");
     const arrow = defs.append("marker")
         .attr("id","arrow")
@@ -33,7 +45,7 @@ export async function drawMap(
     const arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
     arrow.append("path")
         .attr("d",arrow_path)
-        .attr("fill", '#000000');
+        .attr("fill", '#873800');
     for (let i = 0; i < colors.length; i++) {
         const arrowMarker = defs.append("marker")
             .attr("id","arrow" + i)
@@ -82,7 +94,6 @@ export async function drawMap(
             'Content-Type': 'application/json'
         },
     })).data;
-
     const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
     const {nodes, edges, sequence} = calcCircleLayout(
         {x: radius, y: radius},
@@ -101,9 +112,29 @@ export async function drawMap(
         .enter()
         .append('path')
         .attr('d', d => link(d.path))
-        .attr('stroke', '#878787')
-        .attr('stroke-width', 2)
+        .attr('stroke', '#873800')
+        .attr('stroke-width', 4)
         .attr('fill', 'none')
+        .style('cursor', 'pointer')
+        .on('mouseover', d => {
+            let topic = '';
+            for (let edge of relationCrossCommunity) {
+                if (topicId2Community[edge[0]] === d.start && topicId2Community[edge[1]] === d.end) {
+                    topic += topics[edge[0]] + '->' + topics[edge[1]] + '\n';
+                }
+            }
+            divTooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            divTooltip.html(topic.trim())
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            divTooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        })
         .attr('marker-end', 'url(#arrow)');
     canvas.append('g')
         .attr('id', 'com')
@@ -189,6 +220,8 @@ export async function drawMap(
         .on('click', d => clickCom(d));
 
     function clickCom(d: any) {
+        d3.select('#edgeWithTopicInCom').remove();
+        d3.select('#edgeWithTopicCrossCom').remove();
         treeSvg.style.visibility = 'hidden';
         switch (layer) {
             case 0:
@@ -248,8 +281,6 @@ export async function drawMap(
             .transition()
             .delay(300)
             .attr('d', d => link(d.path))
-            .attr('stroke-width', 2)
-            .attr('fill', 'none')
             .attr('display', 'inline');
         canvas.select('#comText')
             .selectAll('text')
@@ -258,6 +289,7 @@ export async function drawMap(
             .delay(300)
             .attr('x', d => d.cx - 14 * topics[sequences[d.id][0]].length / 2)
             .attr('y', d => d.cy + d.r + 24)
+            .attr('font-size', 14)
             .attr('display', 'inline');
         for (let com of nodes) {
             const tmp = calcCircleLayoutWithoutReduceCrossing(
@@ -401,7 +433,16 @@ export async function drawMap(
     }
 
     function clickNode(d: any, com) {
+        d3.select('#edgeWithTopicInCom').remove();
+        d3.select('#edgeWithTopicCrossCom').remove();
         treeSvg.style.visibility = 'hidden';
+        zoom.topicId = d.id;
+        zoom.com = com.id;
+        if (d.id === -1) {
+            comSecond(com.id);
+            layer = 2;
+            return;
+        }
         switch (layer) {
             case 0:
                 comSecond(com.id);
@@ -419,8 +460,6 @@ export async function drawMap(
                 nodeFirst(d.id, com);
                 break;
         }
-        zoom.topicId = d.id;
-        zoom.com = com.id;
         clickTopic(d.id, topics[d.id]);
     }
 
@@ -521,6 +560,75 @@ export async function drawMap(
                         drawTree(treeSvg, res.data.data, () => {});
                     }).catch(err => console.log(err))
                 }
+                const es = calcEdgeWithSelectedNode(
+                    {x: com.cx, y: com.cy},
+                    com.r,
+                    graph[com.id],
+                    tmp.nodes,
+                    id,
+                );
+                canvas.append('g')
+                    .attr('id', 'edgeWithTopicInCom')
+                    .selectAll('path')
+                    .data(es)
+                    .enter()
+                    .append('path')
+                    .attr('d', d => link(d))
+                    .attr('stroke', '#873800')
+                    .attr('stroke-width', 2)
+                    .attr('fill', 'none')
+                    .attr('marker-end', 'url(#arrow)');
+                const edgeCrossCom = calcEdgeWithSelectedNodeCrossCom(
+                    {x: com.cx, y: com.cy},
+                    com.r,
+                    id,
+                    relationCrossCommunity,
+                    topicId2Community,
+                    nodes
+                );
+                canvas.append('g')
+                    .attr('id', 'edgeWithTopicCrossCom')
+                    .selectAll('path')
+                    .data(edgeCrossCom)
+                    .enter()
+                    .append('path')
+                    .attr('d', d => link(d.path))
+                    .attr('stroke', '#873800')
+                    .attr('stroke-width', 4)
+                    .attr('fill', 'none')
+                    .style('cursor', 'pointer')
+                    .on('mouseover', d => {
+                        let topic = '';
+                        for (let topicId of d.topics) {
+                            topic += topics[topicId] + ' ';
+                        }
+                        divTooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        divTooltip.html(topic.trim())
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        divTooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    })
+                    .on('click', d => {
+                        divTooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+
+                        if (com.id === d.start) {
+                            zoom.com = d.end;
+                            clickCom({id:d.end});
+                        } else {
+                            zoom.com = d.start;
+                            clickCom({id:d.start});
+                        }
+                    })
+                    .attr('marker-end', 'url(#arrow)');
+
             }
         }
 
