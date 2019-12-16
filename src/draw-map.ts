@@ -190,7 +190,14 @@ export async function drawMap(
                     return tmp;
                 }
             })
-            .attr('x', d => d.cx - d.r + 2)
+            .attr('x', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                if (tmp > 24) {
+                    return d.cx - 12 * judgementStringLengthWithChinese(topics[d.id]);
+                } else {
+                    return d.cx - tmp / 2 * judgementStringLengthWithChinese(topics[d.id]);
+                }
+            })
             .attr('y', d => d.cy + (d.r - 2) / judgementStringLengthWithChinese(topics[d.id]))
             .text(d => topics[d.id])
             .attr('fill', '#ffffff')
@@ -341,7 +348,10 @@ export async function drawMap(
                         return tmp;
                     }
                 })
-                .attr('x', d => d.cx - d.r + 2)
+                .attr('x', d => {
+                    const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                    return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp/2);
+                })
                 .attr('y', d => {
                     const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
                     if (tmp > 24) {
@@ -385,7 +395,10 @@ export async function drawMap(
             .data(nodes)
             .transition()
             .delay(300)
-            .attr('x', d => d.cx - d.r + 2)
+            .attr('x', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                return d.cx - judgementStringLengthWithChinese(topics[sequences[d.id][0]]) * (tmp > 24 ? 12 : tmp / 2);
+            })
             .attr('y', d => {
                 const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
                 if (tmp > 24) {
@@ -461,7 +474,10 @@ export async function drawMap(
                             return tmp;
                         }
                     })
-                    .attr('x', d => d.cx - d.r + 2)
+                    .attr('x', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp/2);
+                    })
                     .attr('y', d => {
                         const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
                         if (tmp > 24) {
@@ -538,7 +554,10 @@ export async function drawMap(
             .data(nodes)
             .transition()
             .delay(300)
-            .attr('x', d => d.cx - d.r + 2)
+            .attr('x', d => {
+                const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+                return d.cx - judgementStringLengthWithChinese(topics[sequences[d.id][0]]) * (tmp > 24 ? 12 : tmp / 2);
+            })
             .attr('y', d => {
                 const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
                 if (tmp > 24) {
@@ -606,7 +625,10 @@ export async function drawMap(
                             return tmp;
                         }
                     })
-                    .attr('x', d => d.cx - d.r + 2)
+                    .attr('x', d => {
+                        const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
+                        return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp / 2);
+                    })
                     .attr('y', d => {
                         const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
                         if (tmp > 24) {
