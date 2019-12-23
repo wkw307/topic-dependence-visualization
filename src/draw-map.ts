@@ -4,7 +4,6 @@ import axios from 'axios';
 import {presetPalettes} from '@ant-design/colors';
 import {drawTree} from '../module/facetTree';
 
-import {RelationRes} from "./data-process";
 import {
     calcCircleLayout,
     calcCircleLayoutSecondLayer,
@@ -20,8 +19,9 @@ for (let key in presetPalettes) {
 export async function drawMap(
     svg: HTMLElement,
     treeSvg: HTMLElement,
-    data: RelationRes[],
-    clickTopic
+    domainName: string,
+    clickTopic,
+    clickFacet,
 ) {
     let layer = 0;
     const canvas = d3.select(svg);
@@ -67,38 +67,26 @@ export async function drawMap(
         // @ts-ignore
         .y(function(d){return d.y})
         .curve(d3.curveCatmullRom.alpha(0.5));
-
-    const parseResult = await axios.post('http://localhost:3000/parseAPI', data, {
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    });
-    const {topics, relations} = parseResult.data;
-    const resultRelations = (await axios.post('http://localhost:3000/preProcess', {
-        topics, relations
-    }, {
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    })).data;
-    if (resultRelations.hasOwnProperty(-1)) {
-        topics[-1] = '（开始）';
-    }
-    const {graph, topicId2Community, communityRelation, relationCrossCommunity} = (await axios.post('http://localhost:3000/calCommunity', {
-        rpath: '../rscript/communityDiscovery.r',
+    let {
         topics,
-        relations: resultRelations,
-        output: '../tmp/',
-    }, {
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    })).data;
+        resultRelations,
+        graph,
+        topicId2Community,
+        relationCrossCommunity,
+        communityRelation,
+    } = (await axios.get('http://47.105.158.15:8000/dependences/?domainName=' + encodeURI(domainName))).data;
+    for (let key in graph) {
+        graph[key] = completeObj(graph[key]);
+    }
+    console.log(topics, communityRelation, topicId2Community, relationCrossCommunity);
+    communityRelation = completeObj(communityRelation);
     const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
     const {nodes, edges, sequence} = calcCircleLayout(
         {x: radius, y: radius},
         radius,
-        communityRelation);
+        communityRelation,
+        topicId2Community[-1] !== undefined ? topicId2Community[-1] : undefined
+    );
     const globalSequence = sequence;
     const sequences = {};
     const zoom = {
@@ -152,6 +140,7 @@ export async function drawMap(
             {x: com.cx, y: com.cy},
             com.r,
             graph[com.id],
+            com.id === topicId2Community[-1] ? -1 : undefined
         );
         sequences[com.id] = tmp.sequence;
         canvas.append('g')
@@ -650,7 +639,7 @@ export async function drawMap(
                 treeSvg.style.visibility = 'visible';
                 if (id !== -1 && topics[id]) {
                     axios.post('http://yotta.xjtushilei.com:8083/topic/getCompleteTopicByTopicName?topicName=' + encodeURIComponent(topics[id]) + '&hasFragment=emptyAssembleContent').then(res => {
-                        drawTree(treeSvg, res.data.data, () => {});
+                        drawTree(treeSvg, res.data.data, clickFacet);
                     }).catch(err => console.log(err))
                 }
                 const es = calcEdgeWithSelectedNode(
@@ -739,11 +728,28 @@ export async function drawMap(
 function judgementStringLengthWithChinese(str: string): number {
     let result = 0;
     for (let i = 0; i < str.length; i++) {
-        if (/[a-z0-9\+\-\*\\\|\(\)\&\^\%\$\#\@\!\,\.\?\<\>\/]/.test(str[i])) {
+        if (/[a-z0-9\*\\\|\(\)\&\^\%\$\#\@\!\,\.\?\<\>\/]/.test(str[i])) {
             result += 0.5;
         } else {
             result += 1;
         }
     }
     return result;
+}
+
+function completeObj(obj) {
+    let ids = new Set();
+    for (let key in obj) {
+        ids.add(parseInt(key));
+        for (let end of obj[key]) {
+            ids.add(parseInt(end));
+        }
+    }
+    let _ids = <number[]>Array.from(ids);
+    for (let key of _ids) {
+        if (!obj[key]) {
+            obj[key] = []
+        }
+    }
+    return obj;
 }

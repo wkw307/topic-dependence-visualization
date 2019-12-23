@@ -196,6 +196,7 @@ export function calcCircleLayout(
     center: {x: number; y: number;},
     radius: number,
     relations: {[p: string]: any},
+    forceId?: undefined | number,
     ) {
     const {filteredRelations, leafRelations} = preprocess(relations);
     let sequence = reduceCrossing(filteredRelations);
@@ -221,27 +222,31 @@ export function calcCircleLayout(
             }
         }
     }
-    // 将入度为0 出度最大的点放在第一个
-    const inDegree0 = [];
-    for (let start in relations) {
-        let flag = true;
-        for (let other in relations) {
-            if (other !== start) {
-                for (let end of relations[other]) {
-                    if (parseInt(start) === end) {
-                        flag = false;
+    if (forceId === undefined) {
+        // 将入度为0 出度最大的点放在第一个
+        const inDegree0 = [];
+        for (let start in relations) {
+            let flag = true;
+            for (let other in relations) {
+                if (other !== start) {
+                    for (let end of relations[other]) {
+                        if (parseInt(start) === end) {
+                            flag = false;
+                        }
                     }
                 }
             }
+            if (flag) {
+                inDegree0.push(parseInt(start));
+            }
         }
-        if (flag) {
-            inDegree0.push(parseInt(start));
+        if (inDegree0.length > 0) {
+            const initNode = inDegree0.reduce((acc, curr) => acc ? (degree[acc] > degree[curr] ? acc : curr) : curr);
+            const initIndex = sequence.indexOf(initNode);
+            sequence = sequence.slice(initIndex).concat(sequence.slice(0, initIndex));
         }
-    }
-    if (inDegree0.length > 0) {
-        const initNode = inDegree0.reduce((acc, curr) => acc ? (degree[acc] > degree[curr] ? acc : curr) : curr);
-        const initIndex = sequence.indexOf(initNode);
-        sequence = sequence.slice(initIndex).concat(sequence.slice(0, initIndex));
+    } else {
+        sequence = sequence.slice(sequence.indexOf(forceId)).concat(sequence.slice(0, sequence.indexOf(forceId)));
     }
     return Object.assign({
         sequence
