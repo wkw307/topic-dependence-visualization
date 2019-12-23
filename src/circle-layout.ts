@@ -1,7 +1,9 @@
 /**
  * 摘除图中的叶子结点
- * @param relations 
+ * @param relations
  */
+import {strictEqual} from "assert";
+
 function preprocess(relations: {[p:string]: any}): {filteredRelations: {[p:string]:any}; leafRelations: {[p:string]:any}} {
     const nodeFreq = {};
     for (let start in relations) {
@@ -68,9 +70,9 @@ function reduceCrossing(relations: {[p:string]: any}) {
                     degree[start] = 1;
                 }
                 if (degree[end]) {
-                    degree[end] ++;
+                    degree[end] += 0.5;
                 } else {
-                    degree[end] = 1;
+                    degree[end] = 0.5;
                 }
             }
         }
@@ -198,13 +200,38 @@ export function calcCircleLayout(
     relations: {[p: string]: any},
     forceId?: undefined | number,
     ) {
-    const {filteredRelations, leafRelations} = preprocess(relations);
-    let sequence = reduceCrossing(filteredRelations);
-    for (let start in leafRelations) {
-        for (let end of leafRelations[start]) {
-            sequence.splice(sequence.indexOf(parseInt(start))+1, 0, end)
+    // filter stack
+    const filterStack = [];
+    let {filteredRelations, leafRelations} = preprocess(relations);
+    while (true) {
+        if (Object.keys(leafRelations).length === 0) {
+            break;
         }
+        if (Object.keys(filteredRelations).length === 1) {
+            filterStack.push(Object.assign({}, leafRelations));
+            break;
+        }
+        filterStack.push(Object.assign({}, leafRelations));
+        let tmp = preprocess(filteredRelations);
+        filteredRelations = tmp.filteredRelations;
+        leafRelations = tmp.leafRelations;
     }
+
+    let sequence = reduceCrossing(filteredRelations);
+
+    // completing array
+    const stateArr = [sequence];
+    while (filterStack.length > 0) {
+        const sequenceTmp = Array.of(...stateArr[stateArr.length - 1]);
+        const leaves = filterStack.pop();
+        for (let start in leaves) {
+            for (let end of leaves[start]) {
+                sequenceTmp.splice(sequenceTmp.indexOf(parseInt(start)) + 1, 0, end);
+            }
+        }
+        stateArr.push(sequenceTmp);
+    }
+    sequence = stateArr[stateArr.length - 1];
     const degree = {};
     for (let start in relations) {
         if (relations[start].length !== 0) {
