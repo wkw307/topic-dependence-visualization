@@ -200,6 +200,13 @@ export function calcCircleLayout(
     relations: {[p: string]: any},
     forceId?: undefined | number,
     ) {
+    if (Object.keys(relations).length === 1 && relations[Object.keys(relations)[0]].length === 0) {
+        return {
+            sequence: Object.keys(relations),
+            nodes: [],
+            edges:[],
+        }
+    }
     // filter stack
     const filterStack = [];
     let {filteredRelations, leafRelations} = preprocess(relations);

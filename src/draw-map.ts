@@ -31,7 +31,8 @@ export async function drawMap(
         .style('text-align', 'center')
         .style('font-size', '6px')
         .style('background-color', '#ffffb8')
-        .style('padding', '1px 3px');
+        .style('padding', '1px 3px')
+        .style('top', 0);
     const defs = canvas.append("defs");
     const arrow = defs.append("marker")
         .attr("id","arrow")
@@ -78,7 +79,7 @@ export async function drawMap(
     for (let key in graph) {
         graph[key] = completeObj(graph[key]);
     }
-    console.log(topics, communityRelation, topicId2Community, relationCrossCommunity);
+
     communityRelation = completeObj(communityRelation);
     const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
     const {nodes, edges, sequence} = calcCircleLayout(
@@ -134,7 +135,7 @@ export async function drawMap(
         .attr('cx', d => d.cx)
         .attr('cy', d => d.cy)
         .attr('id', d => d.id)
-        .attr('fill', (d, i) => colors[i][1]);
+        .attr('fill', (d, i) => colors[i%colors.length][1]);
     for (let com of nodes) {
         const tmp = calcCircleLayout(
             {x: com.cx, y: com.cy},
@@ -150,7 +151,7 @@ export async function drawMap(
             .enter()
             .append('path')
             .attr('d', d => link(d.path))
-            .attr('stroke', colors[globalSequence.indexOf(com.id)][8])
+            .attr('stroke', colors[globalSequence.indexOf(com.id)%colors.length][8])
             .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
@@ -164,7 +165,7 @@ export async function drawMap(
             .attr('cx', d => d.cx)
             .attr('cy', d => d.cy)
             .attr('id', d => d.id)
-            .attr('fill', colors[globalSequence.indexOf(com.id)][6]);
+            .attr('fill', colors[globalSequence.indexOf(com.id)%colors.length][6]);
         canvas.append('g')
             .attr('id', com.id + 'text')
             .selectAll('text')
@@ -748,7 +749,7 @@ function completeObj(obj) {
     let _ids = <number[]>Array.from(ids);
     for (let key of _ids) {
         if (!obj[key]) {
-            obj[key] = []
+            obj[key] = [];
         }
     }
     return obj;
