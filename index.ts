@@ -1,6 +1,6 @@
 import axios from 'axios';
-import {drawMap} from "./module/topicDependenceVisualization";
-// import {drawMap} from "./src/draw-map";
+// import {drawMap} from "./module/topicDependenceVisualization";
+import {drawMap} from "./src/draw-map";
 import {drawTree} from './module/facetTree';
 
 const domainName = '数据结构';

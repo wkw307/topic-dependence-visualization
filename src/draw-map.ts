@@ -134,7 +134,7 @@ export async function drawMap(
         .attr('r', d => d.r)
         .attr('cx', d => d.cx)
         .attr('cy', d => d.cy)
-        .attr('id', d => d.id)
+        .attr('id', d => 'com' + d.id)
         .attr('fill', (d, i) => colors[i%colors.length][1]);
     for (let com of nodes) {
         const tmp = calcCircleLayout(
@@ -277,7 +277,6 @@ export async function drawMap(
             .attr('r', d => d.r)
             .attr('cx', d => d.cx)
             .attr('cy', d => d.cy)
-            .attr('id', d => d.id)
             .attr('display', 'inline');
         canvas.select('#com2com')
             .selectAll('path')
@@ -375,8 +374,7 @@ export async function drawMap(
             .delay(300)
             .attr('r', d => d.r)
             .attr('cx', d => d.cx)
-            .attr('cy', d => d.cy)
-            .attr('id', d => d.id);
+            .attr('cy', d => d.cy);
         canvas.select('#com2com')
             .selectAll('path')
             .attr('display', 'none');
@@ -534,8 +532,7 @@ export async function drawMap(
             .delay(300)
             .attr('r', d => d.r)
             .attr('cx', d => d.cx)
-            .attr('cy', d => d.cy)
-            .attr('id', d => d.id);
+            .attr('cy', d => d.cy);
         canvas.select('#com2com')
             .selectAll('path')
             .attr('display', 'none');
