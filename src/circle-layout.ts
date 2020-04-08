@@ -3,6 +3,7 @@
  * @param relations
  */
 import {strictEqual} from "assert";
+import { path } from "d3";
 
 function preprocess(relations: {[p:string]: any}): {filteredRelations: {[p:string]:any}; leafRelations: {[p:string]:any}} {
     const nodeFreq = {};
@@ -627,4 +628,43 @@ export function calcEdgeWithSelectedNodeCrossCom(
         }
     }
     return edges;
+}
+
+export function calcEdgeWithSelectedComCrossCom(
+    id: number,
+    communityRelation,
+    nodes,
+) {
+    const relations = [];
+    for (let key in communityRelation) {
+        if (parseInt(key) === id) {
+            for (let com of communityRelation[key]) {
+                relations.push([id, com]);
+            }
+        } else {
+            for (let com of communityRelation[key]) {
+                if (com === id) {
+                    relations.push([parseInt(key), id]);
+                }
+            }
+        }
+    }
+    const paths = [];
+    for (let relation of relations) {
+        const start = nodes.filter(x => x.id === relation[0])[0];
+        const end = nodes.filter(x => x.id === relation[1])[0];
+        paths.push({
+            start: relation[0],
+            end: relation[1],
+            path: calcLinkSourceTargetBetweenCircles(
+                start.cx,
+                start.cy,
+                start.r,
+                end.cx,
+                end.cy,
+                end.r
+            ),
+        });
+    }
+    return paths;
 }

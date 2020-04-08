@@ -1,14 +1,15 @@
 import * as d3 from 'd3';
 import * as path from 'path';
 import axios from 'axios';
-import {presetPalettes} from '@ant-design/colors';
+import { presetPalettes } from '@ant-design/colors';
 import {drawTree} from '../module/facetTree';
 
 import {
     calcCircleLayout,
     calcCircleLayoutSecondLayer,
     calcCircleLayoutWithoutReduceCrossing,
-    calcEdgeWithSelectedNode, calcEdgeWithSelectedNodeCrossCom
+    calcEdgeWithSelectedNode, calcEdgeWithSelectedNodeCrossCom,
+    calcEdgeWithSelectedComCrossCom
 } from "./circle-layout";
 
 const colors = [];
@@ -35,38 +36,38 @@ export async function drawMap(
         .style('top', 0);
     const defs = canvas.append("defs");
     const arrow = defs.append("marker")
-        .attr("id","arrow")
-        .attr("markerUnits","strokeWidth")
-        .attr("markerWidth","8")
-        .attr("markerHeight","8")
-        .attr("viewBox","0 0 12 12")
-        .attr("refX","6")
-        .attr("refY","6")
-        .attr("orient","auto");
+        .attr("id", "arrow")
+        .attr("markerUnits", "strokeWidth")
+        .attr("markerWidth", "8")
+        .attr("markerHeight", "8")
+        .attr("viewBox", "0 0 12 12")
+        .attr("refX", "6")
+        .attr("refY", "6")
+        .attr("orient", "auto");
     const arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
     arrow.append("path")
-        .attr("d",arrow_path)
+        .attr("d", arrow_path)
         .attr("fill", '#873800');
     for (let i = 0; i < colors.length; i++) {
         const arrowMarker = defs.append("marker")
-            .attr("id","arrow" + i)
-            .attr("markerUnits","strokeWidth")
-            .attr("markerWidth","8")
-            .attr("markerHeight","8")
-            .attr("viewBox","0 0 12 12")
-            .attr("refX","6")
-            .attr("refY","6")
-            .attr("orient","auto");
+            .attr("id", "arrow" + i)
+            .attr("markerUnits", "strokeWidth")
+            .attr("markerWidth", "8")
+            .attr("markerHeight", "8")
+            .attr("viewBox", "0 0 12 12")
+            .attr("refX", "6")
+            .attr("refY", "6")
+            .attr("orient", "auto");
         const arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
         arrowMarker.append("path")
-            .attr("d",arrow_path)
+            .attr("d", arrow_path)
             .attr("fill", colors[i][9]);
     }
     const link = d3.line()
-    // @ts-ignore
-        .x(function(d){return d.x})
         // @ts-ignore
-        .y(function(d){return d.y})
+        .x(function (d) { return d.x })
+        // @ts-ignore
+        .y(function (d) { return d.y })
         .curve(d3.curveCatmullRom.alpha(0.5));
     let {
         topics,
@@ -82,8 +83,8 @@ export async function drawMap(
 
     communityRelation = completeObj(communityRelation);
     const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
-    const {nodes, edges, sequence} = calcCircleLayout(
-        {x: radius, y: radius},
+    const { nodes, edges, sequence } = calcCircleLayout(
+        { x: radius, y: radius },
         radius,
         communityRelation,
         topicId2Community[-1] !== undefined ? topicId2Community[-1] : undefined
@@ -119,7 +120,7 @@ export async function drawMap(
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
         })
-        .on("mouseout", function(d) {
+        .on("mouseout", function (d) {
             divTooltip.transition()
                 .duration(500)
                 .style("opacity", 0);
@@ -135,10 +136,10 @@ export async function drawMap(
         .attr('cx', d => d.cx)
         .attr('cy', d => d.cy)
         .attr('id', d => 'com' + d.id)
-        .attr('fill', (d, i) => colors[i%colors.length][1]);
+        .attr('fill', (d, i) => colors[i % colors.length][1]);
     for (let com of nodes) {
         const tmp = calcCircleLayout(
-            {x: com.cx, y: com.cy},
+            { x: com.cx, y: com.cy },
             com.r,
             graph[com.id],
             com.id === topicId2Community[-1] ? -1 : undefined
@@ -151,7 +152,7 @@ export async function drawMap(
             .enter()
             .append('path')
             .attr('d', d => link(d.path))
-            .attr('stroke', colors[globalSequence.indexOf(com.id)%colors.length][8])
+            .attr('stroke', colors[globalSequence.indexOf(com.id) % colors.length][8])
             .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
@@ -165,7 +166,7 @@ export async function drawMap(
             .attr('cx', d => d.cx)
             .attr('cy', d => d.cy)
             .attr('id', d => d.id)
-            .attr('fill', colors[globalSequence.indexOf(com.id)%colors.length][6]);
+            .attr('fill', colors[globalSequence.indexOf(com.id) % colors.length][6]);
         canvas.append('g')
             .attr('id', com.id + 'text')
             .selectAll('text')
@@ -262,8 +263,8 @@ export async function drawMap(
      * id: 选中知识簇id
      */
     function comFirst(id) {
-        const {nodes, edges} = calcCircleLayoutWithoutReduceCrossing(
-            {x: radius, y: radius},
+        const { nodes, edges } = calcCircleLayoutWithoutReduceCrossing(
+            { x: radius, y: radius },
             radius,
             communityRelation,
             globalSequence,
@@ -296,7 +297,7 @@ export async function drawMap(
             .attr('display', 'inline');
         for (let com of nodes) {
             const tmp = calcCircleLayoutWithoutReduceCrossing(
-                {x: com.cx, y: com.cy},
+                { x: com.cx, y: com.cy },
                 com.r,
                 graph[com.id],
                 sequences[com.id],
@@ -339,7 +340,7 @@ export async function drawMap(
                 })
                 .attr('x', d => {
                     const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
-                    return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp/2);
+                    return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp / 2);
                 })
                 .attr('y', d => {
                     const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
@@ -360,13 +361,19 @@ export async function drawMap(
      * @param id
      */
     function comSecond(id) {
-        const {nodes, edges} = calcCircleLayoutSecondLayer(
-            {x: radius, y: radius},
+        const { nodes, edges } = calcCircleLayoutSecondLayer(
+            { x: radius, y: radius },
             radius,
             communityRelation,
             globalSequence,
             id
         );
+        const paths = calcEdgeWithSelectedComCrossCom(
+            id,
+            communityRelation,
+            nodes
+        );
+        console.log(paths)
         canvas.select('#com')
             .selectAll('circle')
             .data(nodes)
@@ -375,9 +382,18 @@ export async function drawMap(
             .attr('r', d => d.r)
             .attr('cx', d => d.cx)
             .attr('cy', d => d.cy);
+        // 显示与二级焦点知识簇相关的簇间认知关系
         canvas.select('#com2com')
             .selectAll('path')
             .attr('display', 'none');
+        canvas.select('#com2com')
+            .selectAll('path')
+            .data(paths)
+            .attr('d', d => {
+                console.log(d)
+                return link(d.path)
+            })
+            .attr('display', 'inline');
         canvas.select('#comText')
             .selectAll('text')
             .data(nodes)
@@ -421,7 +437,7 @@ export async function drawMap(
                     .attr('display', 'none');
             } else {
                 const tmp = calcCircleLayoutWithoutReduceCrossing(
-                    {x: com.cx, y: com.cy},
+                    { x: com.cx, y: com.cy },
                     com.r,
                     graph[com.id],
                     sequences[com.id],
@@ -464,7 +480,7 @@ export async function drawMap(
                     })
                     .attr('x', d => {
                         const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
-                        return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp/2);
+                        return d.cx - judgementStringLengthWithChinese(topics[d.id]) * (tmp > 24 ? 12 : tmp / 2);
                     })
                     .attr('y', d => {
                         const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[d.id]);
@@ -518,8 +534,8 @@ export async function drawMap(
      * @param com
      */
     function nodeFirst(id, c) {
-        const {nodes, edges} = calcCircleLayoutSecondLayer(
-            {x: radius, y: radius},
+        const { nodes, edges } = calcCircleLayoutSecondLayer(
+            { x: radius, y: radius },
             radius,
             communityRelation,
             globalSequence,
@@ -581,7 +597,7 @@ export async function drawMap(
                     .attr('display', 'none');
             } else {
                 const tmp = calcCircleLayoutSecondLayer(
-                    {x: com.cx, y: com.cy},
+                    { x: com.cx, y: com.cy },
                     com.r,
                     graph[com.id],
                     sequences[com.id],
@@ -630,10 +646,10 @@ export async function drawMap(
 
                 const count = sequences[com.id].length;
                 const r = 0.4 * com.r * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
-                treeSvg.style.width = ( 2 * com.r - 4 * r ) / 5 * 3 + 'px';
-                treeSvg.style.height = ( 2 * com.r - 4 * r ) / 5 * 4 + 'px';
-                treeSvg.style.left = ( svg.clientWidth / 2 - ( com.r - 2 * r ) / 5 * 3 - 24) + 'px';
-                treeSvg.style.top = ( svg.clientHeight / 2 - ( com.r - 2 * r ) / 5 * 4 - 24) + 'px';
+                treeSvg.style.width = (2 * com.r - 4 * r) / 5 * 3 + 'px';
+                treeSvg.style.height = (2 * com.r - 4 * r) / 5 * 4 + 'px';
+                treeSvg.style.left = (svg.clientWidth / 2 - (com.r - 2 * r) / 5 * 3 - 24) + 'px';
+                treeSvg.style.top = (svg.clientHeight / 2 - (com.r - 2 * r) / 5 * 4 - 24) + 'px';
                 treeSvg.style.visibility = 'visible';
                 if (id !== -1 && topics[id]) {
                     axios.post('http://yotta.xjtushilei.com:8083/topic/getCompleteTopicByTopicName?topicName=' + encodeURIComponent(topics[id]) + '&hasFragment=emptyAssembleContent').then(res => {
@@ -641,7 +657,7 @@ export async function drawMap(
                     }).catch(err => console.log(err))
                 }
                 const es = calcEdgeWithSelectedNode(
-                    {x: com.cx, y: com.cy},
+                    { x: com.cx, y: com.cy },
                     com.r,
                     graph[com.id],
                     tmp.nodes,
@@ -659,7 +675,7 @@ export async function drawMap(
                     .attr('fill', 'none')
                     .attr('marker-end', 'url(#arrow)');
                 const edgeCrossCom = calcEdgeWithSelectedNodeCrossCom(
-                    {x: com.cx, y: com.cy},
+                    { x: com.cx, y: com.cy },
                     com.r,
                     id,
                     relationCrossCommunity,
@@ -689,7 +705,7 @@ export async function drawMap(
                             .style("left", (d3.event.pageX) + "px")
                             .style("top", (d3.event.pageY - 28) + "px");
                     })
-                    .on("mouseout", function(d) {
+                    .on("mouseout", function (d) {
                         divTooltip.transition()
                             .duration(500)
                             .style("opacity", 0);
@@ -701,10 +717,10 @@ export async function drawMap(
 
                         if (com.id === d.start) {
                             zoom.com = d.end;
-                            clickCom({id:d.end});
+                            clickCom({ id: d.end });
                         } else {
                             zoom.com = d.start;
-                            clickCom({id:d.start});
+                            clickCom({ id: d.start });
                         }
                     })
                     .attr('marker-end', 'url(#arrow)');
