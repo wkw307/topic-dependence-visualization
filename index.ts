@@ -4,11 +4,12 @@ import {drawMap} from "./src/draw-map";
 // import {drawTree} from './module/facetTree';
 
 const domainName = '数据结构(人工)';
-
+const learningPath = [-1,104882,104890,104894,104898,104941];
+// const learningPath = [];
 const treesvg = document.getElementById('tree');
 
 const svg = document.getElementById('map');
-drawMap(svg, treesvg, domainName, (topicId, topicName) => {}, clickFacet);
+drawMap(svg, treesvg, domainName, learningPath, (topicId, topicName) => {}, clickFacet);
 
 async function clickFacet(facetId: number) {
 

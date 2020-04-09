@@ -171,9 +171,8 @@ function calcCrossing(sequence: number[], relations: {[p: string]: any}): {[p:st
 
 /**
  * 计算两个圆圆心连线在两个圆上的交点
- * return { source: [x,y], target: [x,y] }
  */
-function calcLinkSourceTargetBetweenCircles(cx1, cy1, r1, cx2, cy2, r2){
+export function calcLinkSourceTargetBetweenCircles(cx1, cy1, r1, cx2, cy2, r2){
     let x1 = cx1 + r1 * (cx2 - cx1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
     let y1 = cy1 + r1 * (cy2 - cy1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));
     let x2 = cx2 - r2 * (cx2 - cx1) / Math.sqrt((cx1 - cx2) * (cx1 - cx2) + (cy1 - cy2) * (cy1 - cy2));

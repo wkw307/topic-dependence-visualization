@@ -2,14 +2,15 @@ import * as d3 from 'd3';
 import * as path from 'path';
 import axios from 'axios';
 import { presetPalettes } from '@ant-design/colors';
-import {drawTree} from '../module/facetTree';
+import { drawTree } from '../module/facetTree';
 
 import {
     calcCircleLayout,
     calcCircleLayoutSecondLayer,
     calcCircleLayoutWithoutReduceCrossing,
     calcEdgeWithSelectedNode, calcEdgeWithSelectedNodeCrossCom,
-    calcEdgeWithSelectedComCrossCom
+    calcEdgeWithSelectedComCrossCom,
+    calcLinkSourceTargetBetweenCircles
 } from "./circle-layout";
 
 const colors = [];
@@ -21,6 +22,7 @@ export async function drawMap(
     svg: HTMLElement,
     treeSvg: HTMLElement,
     domainName: string,
+    learningPath: number[] = [],
     clickTopic,
     clickFacet,
 ) {
@@ -38,8 +40,8 @@ export async function drawMap(
     const arrow = defs.append("marker")
         .attr("id", "arrow")
         .attr("markerUnits", "strokeWidth")
-        .attr("markerWidth", "8")
-        .attr("markerHeight", "8")
+        .attr("markerWidth", "6")
+        .attr("markerHeight", "6")
         .attr("viewBox", "0 0 12 12")
         .attr("refX", "6")
         .attr("refY", "6")
@@ -63,7 +65,7 @@ export async function drawMap(
             .attr("d", arrow_path)
             .attr("fill", colors[i][9]);
     }
-    const link = d3.line()
+    const link: any = d3.line()
         // @ts-ignore
         .x(function (d) { return d.x })
         // @ts-ignore
@@ -95,6 +97,7 @@ export async function drawMap(
         com: undefined,
         topicId: undefined,
     };
+    // 绘制簇间认知关系
     canvas.append('g')
         .attr('id', 'com2com')
         .selectAll('path')
@@ -106,6 +109,7 @@ export async function drawMap(
         .attr('stroke-width', 4)
         .attr('fill', 'none')
         .style('cursor', 'pointer')
+        .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible')
         .on('mouseover', d => {
             let topic = '';
             for (let edge of relationCrossCommunity) {
@@ -126,6 +130,7 @@ export async function drawMap(
                 .style("opacity", 0);
         })
         .attr('marker-end', 'url(#arrow)');
+    // 绘制知识簇
     canvas.append('g')
         .attr('id', 'com')
         .selectAll('circle')
@@ -137,13 +142,19 @@ export async function drawMap(
         .attr('cy', d => d.cy)
         .attr('id', d => 'com' + d.id)
         .attr('fill', (d, i) => colors[i % colors.length][1]);
+    let nodePositions = {};
+    // 绘制簇内信息
     for (let com of nodes) {
+        // 计算簇内布局
         const tmp = calcCircleLayout(
             { x: com.cx, y: com.cy },
             com.r,
             graph[com.id],
             com.id === topicId2Community[-1] ? -1 : undefined
         );
+        for (let node of tmp.nodes) {
+            nodePositions[node.id] = node;
+        }
         sequences[com.id] = tmp.sequence;
         canvas.append('g')
             .attr('id', com.id + 'edges')
@@ -155,7 +166,8 @@ export async function drawMap(
             .attr('stroke', colors[globalSequence.indexOf(com.id) % colors.length][8])
             .attr('stroke-width', 2)
             .attr('fill', 'none')
-            .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')');
+            .attr('marker-end', 'url(#arrow' + globalSequence.indexOf(com.id) + ')')
+            .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible');
         canvas.append('g')
             .attr('id', com.id + 'nodes')
             .selectAll('circle')
@@ -206,6 +218,34 @@ export async function drawMap(
         .text(d => topics[sequences[d.id][0]])
         .attr('fill', '#000000')
         .attr('cursor', 'pointer');
+    // 绘制认知路径
+    if (learningPath.length !== 0) {
+        let paths = [];
+        for (let i = 0; i < learningPath.length - 1; i++) {
+            paths.push([learningPath[i], learningPath[i + 1]]);
+        }
+        canvas.append('g')
+            .attr('id', 'learningPaths')
+            .selectAll('path')
+            .data(paths)
+            .enter()
+            .append('path')
+            .attr('d', d => {
+                return link(calcLinkSourceTargetBetweenCircles(
+                    nodePositions[d[0]].cx,
+                    nodePositions[d[0]].cy,
+                    nodePositions[d[0]].r,
+                    nodePositions[d[1]].cx,
+                    nodePositions[d[1]].cy,
+                    nodePositions[d[1]].r,
+                ))
+            })
+            .attr('stroke', '#873800')
+            .attr('stroke-width', 2)
+            .attr('fill', 'none')
+            .style('cursor', 'pointer')
+            .attr('marker-end', 'url(#arrow)');
+    }
     // 交互
     for (let com of nodes) {
         const nElement = document.getElementById(com.id + 'nodes');
@@ -227,6 +267,8 @@ export async function drawMap(
     function clickCom(d: any) {
         d3.select('#edgeWithTopicInCom').remove();
         d3.select('#edgeWithTopicCrossCom').remove();
+        d3.select('#comPaths').remove();
+        d3.select('#inComPaths').remove();
         treeSvg.style.visibility = 'hidden';
         switch (layer) {
             case 0:
@@ -285,7 +327,8 @@ export async function drawMap(
             .transition()
             .delay(300)
             .attr('d', d => link(d.path))
-            .attr('display', 'inline');
+            .attr('display', 'inline')
+            .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible');
         canvas.select('#comText')
             .selectAll('text')
             .data(nodes)
@@ -303,6 +346,9 @@ export async function drawMap(
                 sequences[com.id],
                 undefined
             );
+            for (let node of tmp.nodes) {
+                nodePositions[node.id] = node;
+            }
             const nodeElement = document.getElementById(com.id + 'nodes');
             d3.select(nodeElement)
                 .selectAll('circle')
@@ -323,7 +369,8 @@ export async function drawMap(
                 .attr('d', d => link(d.path))
                 .attr('stroke-width', 2)
                 .attr('fill', 'none')
-                .attr('display', 'inline');
+                .attr('display', 'inline')
+                .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible');
             const textElement = document.getElementById(com.id + 'text');
             d3.select(textElement)
                 .selectAll('text')
@@ -354,6 +401,29 @@ export async function drawMap(
                 .attr('fill', '#ffffff')
                 .attr('display', 'inline');
         }
+        // 绘制认知路径
+        if (learningPath.length !== 0) {
+            let paths = [];
+            for (let i = 0; i < learningPath.length - 1; i++) {
+                paths.push([learningPath[i], learningPath[i + 1]]);
+            }
+            canvas.select('#learningPaths')
+                .selectAll('path')
+                .data(paths)
+                .transition()
+                .delay(300)
+                .style('visibility', 'visible')
+                .attr('d', d => {
+                    return link(calcLinkSourceTargetBetweenCircles(
+                        nodePositions[d[0]].cx,
+                        nodePositions[d[0]].cy,
+                        nodePositions[d[0]].r,
+                        nodePositions[d[1]].cx,
+                        nodePositions[d[1]].cy,
+                        nodePositions[d[1]].r,
+                    ))
+                });
+        }
     }
 
     /**
@@ -373,7 +443,6 @@ export async function drawMap(
             communityRelation,
             nodes
         );
-        console.log(paths)
         canvas.select('#com')
             .selectAll('circle')
             .data(nodes)
@@ -389,10 +458,7 @@ export async function drawMap(
         canvas.select('#com2com')
             .selectAll('path')
             .data(paths)
-            .attr('d', d => {
-                console.log(d)
-                return link(d.path)
-            })
+            .attr('d', d => link(d.path))
             .attr('display', 'inline');
         canvas.select('#comText')
             .selectAll('text')
@@ -421,6 +487,8 @@ export async function drawMap(
                     return tmp;
                 }
             });
+        // 保存二级焦点知识簇内节点坐标
+        let nodeInCom = {};
         for (let com of nodes) {
             if (com.id !== id) {
                 const nodeElement = document.getElementById(com.id + 'nodes');
@@ -443,6 +511,9 @@ export async function drawMap(
                     sequences[com.id],
                     undefined
                 );
+                for (let node of tmp.nodes) {
+                    nodeInCom[node.id] = node;
+                }
                 const nodeElement = document.getElementById(com.id + 'nodes');
                 d3.select(nodeElement)
                     .selectAll('circle')
@@ -495,11 +566,79 @@ export async function drawMap(
                     .attr('display', 'inline');
             }
         }
+        // 绘制认知路径
+        if (learningPath.length !== 0) {
+            let path2com = learningPath.map(x => topicId2Community[x]);
+            let comPaths = [];
+            for (let i = 0; i < path2com.length - 1; i++) {
+                comPaths.push([path2com[i], path2com[i + 1]]);
+            }
+            comPaths = comPaths.filter(x => x[0] !== x[1]);
+            canvas.select('#learningPaths')
+                .style('visibility', 'hidden');
+            canvas.append('g')
+                .attr('id', 'comPaths')
+                .selectAll('path')
+                .data(comPaths)
+                .enter()
+                .append('path')
+                .transition()
+                .delay(300)
+                .attr('d', d => {
+                    return link(
+                        calcLinkSourceTargetBetweenCircles(
+                            nodes.filter(com => com.id === d[0])[0].cx,
+                            nodes.filter(com => com.id === d[0])[0].cy,
+                            nodes.filter(com => com.id === d[0])[0].r,
+                            nodes.filter(com => com.id === d[1])[0].cx,
+                            nodes.filter(com => com.id === d[1])[0].cy,
+                            nodes.filter(com => com.id === d[1])[0].r,
+                        )
+                    )
+                })
+                .attr('stroke', '#873800')
+                .attr('stroke-width', 2)
+                .attr('fill', 'none')
+                .style('cursor', 'pointer')
+                .attr('marker-end', 'url(#arrow)');
+            // 绘制簇内认知路径
+            let paths = [];
+            for (let i = 0; i < learningPath.length - 1; i++) {
+                if (Object.keys(nodeInCom).map(x => parseInt(x)).indexOf(learningPath[i]) !== -1 && Object.keys(nodeInCom).map(x => parseInt(x)).indexOf(learningPath[i + 1]) !== -1) {
+                    paths.push([learningPath[i], learningPath[i + 1]]);
+                }
+            }
+            canvas.append('g')
+                .attr('id', 'inComPaths')
+                .selectAll('path')
+                .data(paths)
+                .enter()
+                .append('path')
+                .transition()
+                .delay(300)
+                .attr('d', d => {
+                    return link(calcLinkSourceTargetBetweenCircles(
+                        nodeInCom[d[0]].cx,
+                        nodeInCom[d[0]].cy,
+                        nodeInCom[d[0]].r,
+                        nodeInCom[d[1]].cx,
+                        nodeInCom[d[1]].cy,
+                        nodeInCom[d[1]].r,
+                    ))
+                })
+                .attr('stroke', '#873800')
+                .attr('stroke-width', 2)
+                .attr('fill', 'none')
+                .style('cursor', 'pointer')
+                .attr('marker-end', 'url(#arrow)');
+        }
     }
 
     function clickNode(d: any, com) {
         d3.select('#edgeWithTopicInCom').remove();
         d3.select('#edgeWithTopicCrossCom').remove();
+        d3.select('#comPaths').remove();
+        d3.select('#inComPaths').remove();
         treeSvg.style.visibility = 'hidden';
         zoom.topicId = d.id;
         zoom.com = com.id;
@@ -663,6 +802,7 @@ export async function drawMap(
                     tmp.nodes,
                     id,
                 );
+                // 焦点知识主题相关认知关系
                 canvas.append('g')
                     .attr('id', 'edgeWithTopicInCom')
                     .selectAll('path')
