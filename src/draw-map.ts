@@ -269,6 +269,9 @@ export async function drawMap(
         d3.select('#edgeWithTopicCrossCom').remove();
         d3.select('#comPaths').remove();
         d3.select('#inComPaths').remove();
+        d3.select('#learningPaths')
+            .selectAll('path')
+            .style('visibility', 'hidden');
         treeSvg.style.visibility = 'hidden';
         switch (layer) {
             case 0:
