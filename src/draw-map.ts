@@ -18,7 +18,19 @@ for (let key in presetPalettes) {
     colors.push(presetPalettes[key].slice(0, 10));
 }
 
+export interface MapData {
+    topics: {[p:string]: string},
+    resultRelations: {[p:string]: number[]};
+    graph: {[p: string]: {
+        [p:string]: number[]
+    }};
+    topicId2Community: {[p:string]: number};
+    relationCrossCommunity: [number, number][];
+    communityRelation: {[p: string]: number[]}
+}
+
 export async function drawMap(
+    mapData: MapData,
     svg: HTMLElement,
     treeSvg: HTMLElement,
     domainName: string,
@@ -26,6 +38,15 @@ export async function drawMap(
     clickTopic,
     clickFacet,
 ) {
+    let {
+        topics,
+        resultRelations,
+        graph,
+        topicId2Community,
+        relationCrossCommunity,
+        communityRelation,
+    } = mapData;
+
     let layer = 0;
     const canvas = d3.select(svg);
     const divTooltip = d3.select('body').append('div')
@@ -71,14 +92,6 @@ export async function drawMap(
         // @ts-ignore
         .y(function (d) { return d.y })
         .curve(d3.curveCatmullRom.alpha(0.5));
-    let {
-        topics,
-        resultRelations,
-        graph,
-        topicId2Community,
-        relationCrossCommunity,
-        communityRelation,
-    } = (await axios.get('http://47.105.158.15:8000/dependences/?domainName=' + encodeURI(domainName))).data;
     for (let key in graph) {
         graph[key] = completeObj(graph[key]);
     }
@@ -214,7 +227,10 @@ export async function drawMap(
         .append('text')
         .attr('font-size', 14)
         .attr('x', d => d.cx - 14 * judgementStringLengthWithChinese(topics[sequences[d.id][0]]) / 2)
-        .attr('y', d => d.cy + d.r + 24)
+        .attr('y', (d, i) => {
+            if (nodes[i].cy < radius) return d.cy - d.r - 24;
+            return d.cy + d.r + 24;
+        })
         .text(d => topics[sequences[d.id][0]])
         .attr('fill', '#000000')
         .attr('cursor', 'pointer');
@@ -338,7 +354,10 @@ export async function drawMap(
             .transition()
             .delay(300)
             .attr('x', d => d.cx - 14 * judgementStringLengthWithChinese(topics[sequences[d.id][0]]) / 2)
-            .attr('y', d => d.cy + d.r + 24)
+            .attr('y', (d, i) => {
+                if (nodes[i].cy < radius) return d.cy - d.r - 24;
+                return d.cy + d.r + 24;
+            })
             .attr('font-size', 14)
             .attr('display', 'inline');
         for (let com of nodes) {

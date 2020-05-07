@@ -6,8 +6,8 @@
 
 #### `topicDependenceVisualization.js`模块
 
-`drawMap(svg, treesvg, domainName, learningPath, clickTopic, clickFacet)`
-
+`drawMap(data, svg, treesvg, domainName, learningPath, clickTopic, clickFacet)`
+- `data` 认知关系数据，格式如`gaozhongshuxue.ts`
 - `svg` 显示认知关系的svg元素，需要设置宽高
 - `treesvg` 显示分面树的svg元素，不要设置宽高，但需要使其浮于认知关系图之上
 - `learningPath: number[]` 知识主题id列表，用来显示推荐认知路径，目前后端未支持
