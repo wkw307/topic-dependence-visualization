@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import * as path from 'path';
 import axios from 'axios';
 import { presetPalettes } from '@ant-design/colors';
-import { drawTree } from '../module/facetTree';
+import { drawTree } from 'facet-tree-visualization';
 
 import {
     calcCircleLayout,

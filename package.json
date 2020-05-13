@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production --config ./config/webpack.config.dev.js",
-    "build-server": "webpack --mode production --config ./config/webpack.config.server.js",
     "pack": "webpack --mode production"
   },
   "repository": {
@@ -33,7 +32,8 @@
     "d3": "^5.9.2",
     "express": "^4.17.1",
     "lodash": "^4.17.15",
-    "r-script": "^0.0.4"
+    "r-script": "^0.0.4",
+    "facet-tree-visualization": "github:xjtu-e-learning/facet-tree-visualization#v1.1"
   },
   "devDependencies": {
     "@types/d3": "^5.7.2",

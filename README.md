@@ -1,6 +1,6 @@
 ### topic-dependence-visualization
 
-> 需要将[`facetTree.js`](https://github.com/wkw307/facet-tree-visualization/releases)放在`/module/facetTree.js`位置，`/module`文件夹需要新建
+> ~~需要将[`facetTree.js`](https://github.com/wkw307/facet-tree-visualization/releases)放在`/module/facetTree.js`位置，`/module`文件夹需要新建~~
 
 `/config/webpack.config.dev.js` 打包知识森林可视化模块的配置，打包结果生成在`/module/topicDependenceVisualization.js`，打包命令`npm run build`
 
