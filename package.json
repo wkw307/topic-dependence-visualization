@@ -27,20 +27,14 @@
   "dependencies": {
     "@ant-design/colors": "^3.2.2",
     "axios": "^0.19.0",
-    "body-parser": "^1.19.0",
-    "cors": "^2.8.5",
     "d3": "^5.9.2",
-    "express": "^4.17.1",
     "lodash": "^4.17.15",
-    "r-script": "^0.0.4",
     "facet-tree-visualization": "github:xjtu-e-learning/facet-tree-visualization#v1.1"
   },
   "devDependencies": {
     "@types/d3": "^5.7.2",
-    "@types/express": "^4.17.2",
     "@types/jest": "^24.0.23",
     "@types/lodash": "^4.14.147",
-    "@types/node": "^12.12.12",
     "@typescript-eslint/eslint-plugin": "^2.3.1",
     "@typescript-eslint/parser": "^2.3.1",
     "eslint": "^6.4.0",

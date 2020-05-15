@@ -2,9 +2,6 @@
  * 摘除图中的叶子结点
  * @param relations
  */
-import {strictEqual} from "assert";
-import { path } from "d3";
-
 function preprocess(relations: {[p:string]: any}): {filteredRelations: {[p:string]:any}; leafRelations: {[p:string]:any}} {
     const nodeFreq = {};
     for (let start in relations) {
@@ -133,7 +130,7 @@ function calcSum(obj: {[p:string]: number}) {
 }
 
 /**
- * 计算给定序列下个边的交点数量
+ * 计算给定序列下各边的交点数量
  * @param sequence 
  * @param relations 
  */
