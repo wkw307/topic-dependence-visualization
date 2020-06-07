@@ -29,13 +29,13 @@ export interface MapData {
 }
 
 export async function drawMap(
-    mapData: MapData,
-    svg: HTMLElement,
-    treeSvg: HTMLElement,
+    mapData: MapData,//后端返回的数据
+    svg: HTMLElement,//画整张图需要的svg
+    treeSvg: HTMLElement,//画分面树需要的svg,是通过css设置浮在上面的，其宽高是根据主题个数计算的
     domainName: string,
-    learningPath: number[] = [],
-    clickTopic,
-    clickFacet,
+    learningPath: number[] = [],//这个是后期用到的，也不用传
+    clickTopic,//点击主题时的回调函数
+    clickFacet,//点击分面时的回调函数
 ) {
     let {
         topics,
@@ -47,7 +47,8 @@ export async function drawMap(
     } = mapData;
 
     let layer = 0;
-    const canvas = d3.select(svg);
+    const canvas = d3.select(svg);//整个认知关系的画布
+    //用来显示画簇的认知关系，鼠标附上去会显示簇
     const divTooltip = d3.select('body').append('div')
         .style('position', 'absolute')
         .style('opacity', 0)
@@ -56,6 +57,7 @@ export async function drawMap(
         .style('background-color', '#ffffb8')
         .style('padding', '1px 3px')
         .style('top', 0);
+    //用来画箭头，设置箭头模板，是用Id来控制的
     const defs = canvas.append("defs");
     const arrow = defs.append("marker")
         .attr("id", "arrow")
@@ -85,44 +87,56 @@ export async function drawMap(
             .attr("d", arrow_path)
             .attr("fill", colors[i][9]);
     }
+    //画线的代码，用来生成d3画线需要的数据
     const link: any = d3.line()
         // @ts-ignore
         .x(function (d) { return d.x })
         // @ts-ignore
         .y(function (d) { return d.y })
         .curve(d3.curveCatmullRom.alpha(0.5));
+    
     for (let key in graph) {
         graph[key] = completeObj(graph[key]);
     }
-
+    // 补全键名，键名是所有的topic_id
     communityRelation = completeObj(communityRelation);
+    // 画外面的大圆
     const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
+    //整张大圆的圆心、半径、簇和簇之间认知关系的数据
+    //判断有没有起始簇，入度为0的点只有一个的话就不需要加上开始，如果有多个入度为0的点则需要加上一个开始节点？？不是这个意思
+    //使得入度为0的点放在每一个圆的12.方向
+    //得到sequence,点的数据和边的数据
     const { nodes, edges, sequence } = calcCircleLayout(
         { x: radius, y: radius },
         radius,
         communityRelation,
         topicId2Community[-1] !== undefined ? topicId2Community[-1] : undefined
     );
+    //globalSequence是簇之间的序列关系
     const globalSequence = sequence;
+    console.log("globalSequence",globalSequence)
     const sequences = {};
+    //zoom是用来控制在第几层焦点
     const zoom = {
         com: undefined,
         topicId: undefined,
     };
-    // 绘制簇间认知关系
+
+    // 绘制簇间认知关系，簇之间的认知关系都绘制在同一个g元素中
     canvas.append('g')
         .attr('id', 'com2com')
         .selectAll('path')
-        .data(edges)
+        .data(edges)//簇之间的边
         .enter()
         .append('path')
-        .attr('d', d => link(d.path))
+        .attr('d', d => link(d.path))//起始和终止节点
         .attr('stroke', '#873800')
         .attr('stroke-width', 4)
         .attr('fill', 'none')
-        .style('cursor', 'pointer')
-        .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible')
+        .style('cursor', 'pointer')//鼠标移上去是指针的样子
+        .style('visibility', learningPath.length !== 0 ? 'hidden' : 'visible')//簇之间的认知关系是否显示
         .on('mouseover', d => {
+            //一个交互，鼠标移上去会显示跨簇的认知关系
             let topic = '';
             for (let edge of relationCrossCommunity) {
                 if (topicId2Community[edge[0]] === d.start && topicId2Community[edge[1]] === d.end) {
@@ -140,7 +154,9 @@ export async function drawMap(
             divTooltip.transition()
                 .duration(500)
                 .style("opacity", 0);
+                //移出去之后，透明度变成0了
         })
+        //加上箭头模板
         .attr('marker-end', 'url(#arrow)');
     // 绘制知识簇
     canvas.append('g')
@@ -164,6 +180,7 @@ export async function drawMap(
             graph[com.id],
             com.id === topicId2Community[-1] ? -1 : undefined
         );
+        console.log("tmp",'tmp')
         for (let node of tmp.nodes) {
             nodePositions[node.id] = node;
         }
@@ -263,7 +280,9 @@ export async function drawMap(
     }
     // 交互
     for (let com of nodes) {
+        // 获取到每个簇的节点，这个获取的是一整个簇的g元素
         const nElement = document.getElementById(com.id + 'nodes');
+        // 给这个元素加上两个监听
         d3.select(nElement)
             .selectAll('circle')
             .on('click', (d: any) => clickNode(d, com));
@@ -272,14 +291,19 @@ export async function drawMap(
             .selectAll('text')
             .on('click', (d: any) => clickNode(d, com));
     }
+    // 下面这个是点击整个大圆时的交互
     canvas.select('#com')
         .selectAll('circle')
         .on('click', d => clickCom(d));
+    //点击簇名时的交互
     canvas.select('#comText')
         .selectAll('text')
         .on('click', d => clickCom(d));
-
+    // 点击簇时的交互逻辑
     function clickCom(d: any) {
+        // 每次交互时的一个初始化操作
+        // 把特殊情况的边删掉
+        // 把画簇的svg隐藏起来
         d3.select('#edgeWithTopicInCom').remove();
         d3.select('#edgeWithTopicCrossCom').remove();
         d3.select('#comPaths').remove();
@@ -288,16 +312,20 @@ export async function drawMap(
             .selectAll('path')
             .style('visibility', 'hidden');
         treeSvg.style.visibility = 'hidden';
+        // 判断在哪一层
+        // 第0层是知识簇的一级状态
         switch (layer) {
             case 0:
                 comFirst(d.id);
                 layer = 1;
                 break;
             case 1:
+                // 一级焦点下，点击相同簇会进入第二层
                 if (zoom.com === d.id) {
                     layer = 2;
                     comSecond(d.id);
                 } else {
+                    //点击其他还是回到一级焦点
                     comFirst(d.id);
                 }
                 break;
@@ -323,13 +351,16 @@ export async function drawMap(
      * id: 选中知识簇id
      */
     function comFirst(id) {
+        // 传入的是那个知识簇的id
+        // 调用函数计算每个簇的圆心和半径
         const { nodes, edges } = calcCircleLayoutWithoutReduceCrossing(
             { x: radius, y: radius },
             radius,
             communityRelation,
             globalSequence,
-            id
+            id// focus id,对这个簇分比其他簇更大的圆心角
         );
+        // 使用d3画知识簇
         canvas.select('#com')
             .selectAll('circle')
             .data(nodes)
@@ -459,6 +490,7 @@ export async function drawMap(
             globalSequence,
             id
         );
+        // 这个是计算比较特殊的边，即这个选中的簇与其他簇之间的边
         const paths = calcEdgeWithSelectedComCrossCom(
             id,
             communityRelation,
@@ -664,6 +696,7 @@ export async function drawMap(
         zoom.topicId = d.id;
         zoom.com = com.id;
         if (d.id === -1) {
+            // 默认状态下点击知识主题直接进入第二层
             comSecond(com.id);
             layer = 2;
             return;

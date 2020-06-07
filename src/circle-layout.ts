@@ -1,3 +1,5 @@
+import { cyan } from "@ant-design/colors";
+
 /**
  * 摘除图中的叶子结点
  * @param relations
@@ -61,6 +63,7 @@ function reduceCrossing(relations: {[p:string]: any}) {
     const degree = {};
     for (let start in relations) {
         if (relations[start].length !== 0) {
+            //统计度，交换的时候交换度比较小的节点
             for (let end of relations[start]) {
                 if (degree[start]) {
                     degree[start]++;
@@ -75,10 +78,13 @@ function reduceCrossing(relations: {[p:string]: any}) {
             }
         }
     }
+    //起始交叉点设置为正无穷
     let prevCrossing = Infinity;
+    //计算每条边交叉数量的函数
     let edges = calcCrossing(sequence, relations);
     let maxCrossing = Object.keys(edges).reduce((acc, curr) => acc ? (edges[acc] < edges[curr] ? curr : acc) : curr,'');
     let currCrossing = calcSum(edges);
+    //对当前布局进行了保存
     let tmpSequence = [...sequence];
     while (currCrossing < prevCrossing && currCrossing > 0) {
         let start, end;
@@ -197,6 +203,7 @@ export function calcCircleLayout(
     relations: {[p: string]: any},
     forceId?: undefined | number,
     ) {
+        //判断传入的relations是否为空
     if (Object.keys(relations).length === 1 && relations[Object.keys(relations)[0]].length === 0) {
         return {
             sequence: Object.keys(relations),
@@ -204,6 +211,7 @@ export function calcCircleLayout(
             edges:[],
         }
     }
+    //迭代摘出度为1的节点
     // filter stack
     const filterStack = [];
     let {filteredRelations, leafRelations} = preprocess(relations);
@@ -220,7 +228,7 @@ export function calcCircleLayout(
         filteredRelations = tmp.filteredRelations;
         leafRelations = tmp.leafRelations;
     }
-
+    //对剩余的关系进行交叉边减少
     let sequence = reduceCrossing(filteredRelations);
 
     // completing array
@@ -253,6 +261,7 @@ export function calcCircleLayout(
             }
         }
     }
+    // 当forceId未定义时，将入度为0，出度最大的点放在第一个
     if (forceId === undefined) {
         // 将入度为0 出度最大的点放在第一个
         const inDegree0 = [];
@@ -277,6 +286,7 @@ export function calcCircleLayout(
             sequence = sequence.slice(initIndex).concat(sequence.slice(0, initIndex));
         }
     } else {
+    // 当forceId定义时，将forceID为-1的点放在第一个
         sequence = sequence.slice(sequence.indexOf(forceId)).concat(sequence.slice(0, sequence.indexOf(forceId)));
     }
     return Object.assign({
@@ -291,7 +301,9 @@ export function calcCircleLayout(
         ));
 }
 
+// 下面这个函数是计算使用d3画图所需要的数据
 export function calcCircleLayoutWithoutReduceCrossing(
+    //整个圆的圆心，大圆半径，刚处理完得到的序列
     center: {x: number; y: number;},
     radius: number,
     relations: {[p: string]: any},
@@ -299,13 +311,16 @@ export function calcCircleLayoutWithoutReduceCrossing(
     focus: number | undefined
 ): {nodes: any[], edges: any[]} {
    if (focus === undefined) {
+       // 得到序列长度，就是有多少个簇
        const count = sequence.length;
+       // 簇这个圆的半径
        const r = 0.8 * radius * Math.sin(Math.PI / count) / (1 + Math.sin(Math.PI / count));
        const angle = Math.PI * 2 / count;
        const nodes = [];
        const edges = [];
        const node2position = {};
        for (let i = 0; i < count; i++) {
+           //计算出每个簇圆的圆心
            const tmp = {
                r,
                id: sequence[i],
@@ -400,7 +415,7 @@ export function calcCircleLayoutWithoutReduceCrossing(
        }
    }
 }
-
+// 二级焦点，在画布中间画一个大圆，圆心是整个画布的圆心
 export function calcCircleLayoutSecondLayer(
     center: {x: number; y: number},
     radius: number,
@@ -409,6 +424,8 @@ export function calcCircleLayoutSecondLayer(
     focus: number,
 ) {
     const count = sequence.length;
+    // 将半径缩小为原来的0.4倍
+    // 首先算出外面缩小的每个簇的坐标
     const r = 0.4 * radius * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
     const angle = Math.PI * 2 / (count + 1);
     const nodes = [];
@@ -424,7 +441,9 @@ export function calcCircleLayoutSecondLayer(
             };
             node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
             nodes.push(tmp);
-        } else if (sequence.indexOf(focus) === i) {
+        }
+        // 如果是焦点的话，这个是计算大圆的圆心以及半径的 
+        else if (sequence.indexOf(focus) === i) {
             const tmp = {
                 r: 0.9 * ( radius - 2 * r ),
                 id: sequence[i],
@@ -451,6 +470,70 @@ export function calcCircleLayoutSecondLayer(
     }
 }
 
+export function calcCircleLayoutSecondLayer1(
+    center: {x: number; y: number},
+    radius: number,
+    relations: {[p:string]:any},
+    sequence: number[],
+    focus: number,
+) {
+    const count = sequence.length;
+    // 将半径缩小为原来的0.4倍
+    // 首先算出外面缩小的每个簇的坐标
+    const r = 0.4 * radius * Math.sin(Math.PI / (count + 1)) / (1 + Math.sin(Math.PI / (count + 1)));
+    const angle = Math.PI * 2 / (count + 1);
+    const nodes = [];
+    let num = count/2;
+    const edges = [];
+    const node2position = {};
+
+    // 计算上半部分小圆的位置
+    for (let i = 0; i < count; i++) {
+        // 如果是焦点的话，这个是计算大圆的圆心以及半径的 
+        if (sequence.indexOf(focus) === i) {
+            
+            const tmp = {
+                r:  radius ,
+                //r: radius,
+                id: sequence[i],
+                cx: center.x,
+                cy: center.y,
+            };
+            node2position[sequence[i]] = [tmp.cx, tmp.cy, tmp.r];
+            nodes.push(tmp);
+        } else {
+            if(i < num){
+                const tmp = {
+                    r,
+                    id: sequence[i],
+                    cx: center.x - radius +  (2*i+1)*r  +   ((2 * radius) / (num*2-0.01)) * (i),
+                    cy: center.y - (radius - r),
+    
+                };
+                node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+               // nodes.push(tmp);
+            }
+            else{
+                const tmp = {
+                    r,
+                    id: sequence[i],
+                    cx: center.x - radius +  (2*(i-num-1)+1)*r  +   ((2 * radius) / (num*2-0.01)) * (i-num),  
+                    cy: center.y + (radius - r),
+                   
+                };
+                node2position[sequence[i]] = [tmp.cx, tmp.cy, r];
+               // nodes.push(tmp);
+            }
+        }
+        
+    }
+    
+    return {
+        nodes,
+        edges,
+    }
+}
+// 计算选中的簇与其他簇之间的边，这个需要的数据是跨簇的数据
 export function calcEdgeWithSelectedNode(
     center: {x: number; y: number},
     radius: number,
@@ -663,4 +746,93 @@ export function calcEdgeWithSelectedComCrossCom(
         });
     }
     return paths;
+}
+
+export function calNodeWithSelectedInComCrossCom(
+    id: number,
+    communityRelation,
+    graph,
+) {
+    const Incom = [];
+    const Outcom = [];
+    for (let key in communityRelation) {
+        if (parseInt(key) === id) {
+            for (let com of communityRelation[key]) {
+                Outcom.push([com,graph[com]]);
+            }
+        } else {
+            for (let com of communityRelation[key]) {
+                if (com === id) {
+                    Incom.push([parseInt(key),graph[parseInt(key)]]);
+                }
+            }
+        }
+    }
+    return Incom;
+}
+export function calNodeWithSelectedInTopicCrossCom(
+    id1: number,//簇的id
+    id2:number,//主题的id
+    graph,
+    topics,
+) {
+    const Incom = [];
+    const Outcom = [];
+    for (let key in graph[id1]) {
+        if (parseInt(key) === id2) {
+            for (let com of graph[id1][key]) {
+                Outcom.push([com,topics[com]]);
+            }
+        } else {
+            for (let com of graph[id1][key]) {
+                if (com === id2) {
+                    Incom.push([parseInt(key),topics[parseInt(key)]]);
+                }
+            }
+        }
+    }
+    console.log("InTopic",Incom);
+    console.log("OutTopic",Outcom);
+    return Incom;
+}
+export function calNodeWithSelecteOutTopicCrossCom(
+    id1: number,//簇的id
+    id2:number,//主题的id
+    graph,
+    topics,
+) {
+    const Incom = [];
+    const Outcom = [];
+    for (let key in graph[id1]) {
+        if (parseInt(key) === id2) {
+            for (let com of graph[id1][key]) {
+                Outcom.push([com,topics[com]]);
+            }
+        } else {
+            for (let com of graph[id1][key]) {
+                if (com === id2) {
+                    Incom.push([parseInt(key),topics[parseInt(key)]]);
+                }
+            }
+        }
+    }
+   
+    return Outcom;
+}
+export function calNodeWithSelectedOutComCrossCom(
+    id: number,
+    communityRelation,
+    graph,
+) {
+    
+    const Outcom = [];
+    for (let key in communityRelation) {
+        if (parseInt(key) === id) {
+            for (let com of communityRelation[key]) {
+                Outcom.push([com,graph[com]]);
+            }
+        } 
+    }
+    
+    return Outcom;
 }

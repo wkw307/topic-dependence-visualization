@@ -1,2 +1,2 @@
 export * from './circle-layout';
-export * from './draw-map';
+export * from './draw-map1';
