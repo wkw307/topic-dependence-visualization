@@ -13,3 +13,14 @@
 - `learningPath: number[]` 知识主题id列表，用来显示推荐认知路径，目前后端未支持
 - `clickTopic(topicId: number, topicName: string)` 点击知识主题的响应函数
 - `clickFacet(facetId: number)` 点击分面的响应函数
+
+`drawCommunity(data, svg, clickCom, learningPath)` 仅绘制知识簇（移动端首屏）
+- `data`
+- `svg`
+- `clickCom(d)`
+
+`drawTopic(id, data, svg, clickTopic)` 仅绘制特定知识簇内布局
+- `id`
+- `data`
+- `svg`
+- `clickTopic(topicId: number, topicName: string)`

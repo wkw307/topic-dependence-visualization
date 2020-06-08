@@ -28,6 +28,14 @@ export interface MapData {
     communityRelation: {[p: string]: number[]}
 }
 
+//画线的代码，用来生成d3画线需要的数据
+export const link: any = d3.line()
+    // @ts-ignore
+    .x(function (d) { return d.x })
+    // @ts-ignore
+    .y(function (d) { return d.y })
+    .curve(d3.curveCatmullRom.alpha(0.5));
+
 export async function drawMap(
     mapData: MapData,//后端返回的数据
     svg: HTMLElement,//画整张图需要的svg
@@ -39,7 +47,6 @@ export async function drawMap(
 ) {
     let {
         topics,
-        resultRelations,
         graph,
         topicId2Community,
         relationCrossCommunity,
@@ -87,13 +94,6 @@ export async function drawMap(
             .attr("d", arrow_path)
             .attr("fill", colors[i][9]);
     }
-    //画线的代码，用来生成d3画线需要的数据
-    const link: any = d3.line()
-        // @ts-ignore
-        .x(function (d) { return d.x })
-        // @ts-ignore
-        .y(function (d) { return d.y })
-        .curve(d3.curveCatmullRom.alpha(0.5));
     
     for (let key in graph) {
         graph[key] = completeObj(graph[key]);
@@ -114,7 +114,6 @@ export async function drawMap(
     );
     //globalSequence是簇之间的序列关系
     const globalSequence = sequence;
-    console.log("globalSequence",globalSequence)
     const sequences = {};
     //zoom是用来控制在第几层焦点
     const zoom = {
@@ -180,7 +179,6 @@ export async function drawMap(
             graph[com.id],
             com.id === topicId2Community[-1] ? -1 : undefined
         );
-        console.log("tmp",'tmp')
         for (let node of tmp.nodes) {
             nodePositions[node.id] = node;
         }
@@ -933,7 +931,7 @@ export async function drawMap(
     }
 }
 
-function judgementStringLengthWithChinese(str: string): number {
+export function judgementStringLengthWithChinese(str: string): number {
     let result = 0;
     for (let i = 0; i < str.length; i++) {
         if (/[a-z0-9\*\\\|\(\)\&\^\%\$\#\@\!\,\.\?\<\>\/]/.test(str[i])) {
@@ -945,7 +943,7 @@ function judgementStringLengthWithChinese(str: string): number {
     return result;
 }
 
-function completeObj(obj) {
+export function completeObj(obj) {
     let ids = new Set();
     for (let key in obj) {
         ids.add(parseInt(key));

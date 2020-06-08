@@ -1,11 +1,9 @@
 import { gaozhongshuxue } from './gaozhongshuxue';
 import axios from 'axios';
-// import {drawMap} from "./module/topicDependenceVisualization";
-import {drawMap} from "./src/draw-map1";
-import {drawcommunity} from "./src/draw-community"
-import {drawtopic} from "./src/draw-topic"
-import { drawTree } from 'facet-tree-visualization';
-// import {drawTree} from './module/facetTree';
+import {drawMap} from "./src/draw-map";
+import {drawCommunity} from "./src/draw-community"
+import {drawTopic} from "./src/draw-topic"
+// import { drawTree } from 'facet-tree-visualization';
 
 const domainName = '数据结构(人工)';
 // const learningPath = [-1,104882,104890,104894,104898,104941];
@@ -17,10 +15,10 @@ const svg = document.getElementById('map');
 
 //axios.get('http://47.105.158.15:8000/dependences/?domainName=' + domainName)
    // .then(res => {
-        drawcommunity(gaozhongshuxue, svg, treesvg, domainName, learningPath,(topicId: any, topicName: any) => {console.log(topicId,topicName)}, clickFacet);
-        drawtopic(8,gaozhongshuxue, svg, treesvg, domainName, (topicId: any, topicName: any) => {
-            console.log(topicId,topicName);
-        }, clickFacet);
+// drawCommunity(gaozhongshuxue, svg, (d) => {console.log(d)} ,learningPath);
+drawTopic(8,gaozhongshuxue, svg, (topicId: any, topicName: any) => {
+    console.log(topicId,topicName);
+});
    // })
    // .catch(e => console.log(e));
 async function clickFacet(facetId: number) {
