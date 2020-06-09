@@ -70,7 +70,7 @@ export function drawCommunity(
     // 补全键名，键名是所有的topic_id
     communityRelation = completeObj(communityRelation);
     // 画外面的大圆
-    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 - 24 : svg.clientWidth / 2 - 24;
+    const radius = svg.clientHeight < svg.clientWidth ? svg.clientHeight / 2 : svg.clientWidth / 2;
     //整张大圆的圆心、半径、簇和簇之间认知关系的数据
     //判断有没有起始簇，入度为0的点只有一个的话就不需要加上开始，如果有多个入度为0的点则需要加上一个开始节点？？不是这个意思
     //使得入度为0的点放在每一个圆的12.方向
@@ -81,6 +81,17 @@ export function drawCommunity(
         topicId2Community[-1] !== undefined ? topicId2Community[-1] : undefined
     );
     const sequences = {};
+    // 绘制簇内信息
+    for (let com of nodes) {
+        // 计算簇内布局
+        const tmp = calcCircleLayout(
+            { x: com.cx, y: com.cy },
+            com.r,
+            graph[com.id],
+            com.id === topicId2Community[-1] ? -1 : undefined
+        );
+        sequences[com.id] = tmp.sequence;
+    }
     /**
      * 绘制簇间认知关系
      */
@@ -154,7 +165,12 @@ export function drawCommunity(
             }
         })
         .attr('y', (d, i) => {
-            return d.cy;
+            const tmp = (d.r * 2 - 4) / judgementStringLengthWithChinese(topics[sequences[d.id][0]]);
+            if (tmp > 24) {
+                return d.cy + 12;
+            } else {
+                return d.cy + tmp / 2;
+            }
         })
         .text(d => topics[sequences[d.id][0]])
         .attr('fill', '#000000')
