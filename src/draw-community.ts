@@ -185,5 +185,6 @@ export function drawCommunity(
     canvas.select('#comText')
         .selectAll('text')
         .on('click', d => clickCom(d));
+    return sequences;
 }
 
