@@ -11,7 +11,7 @@
 
 ### Output
 - Circular layout between data
-
+![avatar](photos/visualization.png)
 ## drawCommunity模块（仅绘制知识簇）
 ### Input
 - `data`
