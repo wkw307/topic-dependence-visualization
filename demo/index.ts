@@ -1,26 +1,22 @@
-import { gaozhongshuxue } from '../gaozhongshuxue';
 import axios from 'axios';
+// import {drawMap} from "./module/topicDependenceVisualization";
 import {drawMap} from "../src/draw-map";
-import {drawCommunity} from "../src/draw-community"
-import {drawTopic} from "../index"
-// import { drawTree } from 'facet-tree-visualization';
+// import {drawTree} from './module/facetTree';
 
 const domainName = '数据结构(人工)';
 // const learningPath = [-1,104882,104890,104894,104898,104941];
 const learningPath = [];
 const treesvg = document.getElementById('tree');
+
 const svg = document.getElementById('map');
 
 
+axios.get('http://202.117.43.195:8002/dependences/?domainName=' + domainName)
+    .then(res => {
+        drawMap(res.data, svg, treesvg, domainName, learningPath, (topicId, topicName) => {}, clickFacet);
+    })
+    .catch(e => console.log(e));
 
-//axios.get('http://47.105.158.15:8000/dependences/?domainName=' + domainName)
-   // .then(res => {
-drawCommunity(gaozhongshuxue, svg, (d) => {console.log(d)});
-// drawTopic(8,gaozhongshuxue, svg, (topicId: any, topicName: any) => {
-//     console.log(topicId,topicName);
-// });
-   // })
-   // .catch(e => console.log(e));
 async function clickFacet(facetId: number) {
 
     try {
